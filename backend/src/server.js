@@ -255,6 +255,138 @@ app.get("/buildings/:id/floors", async (req, res) => {
   }
 });
 
+app.post("/buildings/:id/floors", async (req, res) => {
+  const session = driver.session();
+  const toNum = (v) => (v && typeof v.toNumber === "function" ? v.toNumber() : v);
+
+  const buildingId = Number(req.params.id);
+  const level = Number(req.body.level);
+  const capacity = Number(req.body.capacity);
+
+  if ([buildingId, level, capacity].some(Number.isNaN)) {
+    return res.status(400).json({ error: "buildingId, level, capacity must be numbers." });
+  }
+  if (level < 0 || !Number.isInteger(level)) {
+    return res.status(400).json({ error: "level must be a non-negative integer." });
+  }
+  if (capacity <= 0 || !Number.isInteger(capacity)) {
+    return res.status(400).json({ error: "capacity must be a positive integer." });
+  }
+
+  const floorId = buildingId * 100 + level;
+
+  try {
+    // ověř, že budova existuje
+    const b = await session.run(
+      `MATCH (b:Building {id:$buildingId}) RETURN b.id AS id`,
+      { buildingId }
+    );
+    if (b.records.length === 0) {
+      return res.status(404).json({ error: "Building not found." });
+    }
+
+    // vytvoř nebo aktualizuj patro (MERGE) + vztah
+    const result = await session.run(
+      `
+      MATCH (b:Building {id:$buildingId})
+      MERGE (f:Floor {id:$floorId})
+      ON CREATE SET f.level=$level, f.capacity=$capacity
+      ON MATCH SET  f.level=$level, f.capacity=$capacity
+      MERGE (b)-[:HAS_FLOOR]->(f)
+      RETURN f.id AS id, f.level AS level, f.capacity AS capacity
+      `,
+      { buildingId, floorId, level, capacity }
+    );
+
+    const r = result.records[0];
+    res.status(201).json({
+      id: toNum(r.get("id")),
+      level: toNum(r.get("level")),
+      capacity: toNum(r.get("capacity")),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
+  }
+});
+
+app.put("/floors/:id", async (req, res) => {
+  const session = driver.session();
+  const toNum = (v) => (v && typeof v.toNumber === "function" ? v.toNumber() : v);
+
+  const floorId = Number(req.params.id);
+  const capacity = Number(req.body.capacity);
+
+  if ([floorId, capacity].some(Number.isNaN)) {
+    return res.status(400).json({ error: "floorId and capacity must be numbers." });
+  }
+  if (capacity <= 0 || !Number.isInteger(capacity)) {
+    return res.status(400).json({ error: "capacity must be a positive integer." });
+  }
+
+  try {
+    const result = await session.run(
+      `
+      MATCH (f:Floor {id:$floorId})
+      SET f.capacity = $capacity
+      RETURN f.id AS id, f.level AS level, f.capacity AS capacity
+      `,
+      { floorId, capacity }
+    );
+
+    if (result.records.length === 0) {
+      return res.status(404).json({ error: "Floor not found." });
+    }
+
+    const r = result.records[0];
+    res.json({
+      id: toNum(r.get("id")),
+      level: toNum(r.get("level")),
+      capacity: toNum(r.get("capacity")),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
+  }
+});
+
+app.delete("/floors/:id", async (req, res) => {
+  const session = driver.session();
+
+  const floorId = Number(req.params.id);
+  if (Number.isNaN(floorId)) {
+    return res.status(400).json({ error: "floorId must be a number." });
+  }
+
+  try {
+    const result = await session.run(
+      `
+      MATCH (f:Floor {id:$floorId})
+      WITH f
+      OPTIONAL MATCH (f)<-[r]-()
+      DELETE r
+      WITH f
+      DETACH DELETE f
+      RETURN $floorId AS deletedId
+      `,
+      { floorId }
+    );
+
+    // Pokud Floor neexistoval, dotaz nic nesmaže – ošetříme
+    if (result.records.length === 0) {
+      return res.status(404).json({ error: "Floor not found." });
+    }
+
+    res.json({ deletedId: floorId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
+  }
+});
+
 app.get("/persons", async (req, res) => {
   const session = driver.session();
   const toNum = (v) => (v && typeof v.toNumber === "function" ? v.toNumber() : v);
