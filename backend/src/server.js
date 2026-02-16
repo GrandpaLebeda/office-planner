@@ -423,6 +423,135 @@ app.get("/persons", async (req, res) => {
   }
 });
 
+app.post("/persons", async (req, res) => {
+  const session = driver.session();
+  const toNum = (v) => (v && typeof v.toNumber === "function" ? v.toNumber() : v);
+
+  const personId = Number(req.body.id);
+  const firstName = (req.body.firstName || "").trim();
+  const surname = (req.body.surname || "").trim();
+  const departmentId = Number(req.body.departmentId);
+
+  if (Number.isNaN(personId) || Number.isNaN(departmentId)) {
+    return res.status(400).json({ error: "id and departmentId must be numbers." });
+  }
+  if (!firstName || !surname) {
+    return res.status(400).json({ error: "firstName and surname are required." });
+  }
+
+  try {
+    // ověř, že department existuje
+    const dep = await session.run(
+      `MATCH (d:Department {id:$departmentId}) RETURN d.id AS id, d.name AS name`,
+      { departmentId }
+    );
+    if (dep.records.length === 0) {
+      return res.status(404).json({ error: "Department not found." });
+    }
+
+    // vytvoř Person (unikátní ID constraint to pohlídá)
+    // nastav/aktualizuj vztah WORKS_IN (přesun mezi odděleními to taky pokryje)
+    const result = await session.run(
+      `
+      MATCH (d:Department {id:$departmentId})
+      MERGE (p:Person {id:$personId})
+      SET p.firstName=$firstName, p.surname=$surname
+      WITH p, d
+      OPTIONAL MATCH (p)-[old:WORKS_IN]->(:Department)
+      DELETE old
+      MERGE (p)-[:WORKS_IN]->(d)
+      RETURN p.id AS id, p.firstName AS firstName, p.surname AS surname,
+             d.id AS departmentId, d.name AS departmentName
+      `,
+      { personId, firstName, surname, departmentId }
+    );
+
+    const r = result.records[0];
+    res.status(201).json({
+      id: toNum(r.get("id")),
+      firstName: r.get("firstName"),
+      surname: r.get("surname"),
+      department: {
+        id: toNum(r.get("departmentId")),
+        name: r.get("departmentName"),
+      },
+    });
+  } catch (err) {
+    // unikátní constraint -> duplicate id
+    if (String(err.message).toLowerCase().includes("already exists")) {
+      return res.status(409).json({ error: "Person with this id already exists." });
+    }
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
+  }
+});
+
+app.put("/persons/:id/department", async (req, res) => {
+  const session = driver.session();
+  const toNum = (v) => (v && typeof v.toNumber === "function" ? v.toNumber() : v);
+
+  const personId = Number(req.params.id);
+  const departmentId = Number(req.body.departmentId);
+
+  if (Number.isNaN(personId) || Number.isNaN(departmentId)) {
+    return res.status(400).json({ error: "personId and departmentId must be numbers." });
+  }
+
+  try {
+    // ověř, že osoba existuje
+    const personCheck = await session.run(
+      `MATCH (p:Person {id:$personId}) RETURN p.id AS id`,
+      { personId }
+    );
+
+    if (personCheck.records.length === 0) {
+      return res.status(404).json({ error: "Person not found." });
+    }
+
+    // ověř, že department existuje
+    const departmentCheck = await session.run(
+      `MATCH (d:Department {id:$departmentId}) RETURN d.id AS id`,
+      { departmentId }
+    );
+
+    if (departmentCheck.records.length === 0) {
+      return res.status(404).json({ error: "Department not found." });
+    }
+
+    // smaž starý WORKS_IN a vytvoř nový
+    const result = await session.run(
+      `
+      MATCH (p:Person {id:$personId})
+      MATCH (d:Department {id:$departmentId})
+      OPTIONAL MATCH (p)-[r:WORKS_IN]->(:Department)
+      DELETE r
+      MERGE (p)-[:WORKS_IN]->(d)
+      RETURN p.id AS id, p.firstName AS firstName, p.surname AS surname,
+             d.id AS departmentId, d.name AS departmentName
+      `,
+      { personId, departmentId }
+    );
+
+    const r = result.records[0];
+
+    res.json({
+      id: toNum(r.get("id")),
+      firstName: r.get("firstName"),
+      surname: r.get("surname"),
+      department: {
+        id: toNum(r.get("departmentId")),
+        name: r.get("departmentName"),
+      },
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
+  }
+});
+
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => {
   console.log(`API running on http://localhost:${port}`);
