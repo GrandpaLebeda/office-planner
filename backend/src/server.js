@@ -20,6 +20,150 @@ app.get("/health", async (req, res) => {
   }
 });
 
+app.get("/map", async (req, res) => {
+  const session = driver.session();
+  const toNum = (v) => (v && typeof v.toNumber === "function" ? v.toNumber() : v);
+
+  try {
+    // 1) poslední assignment
+    const aRes = await session.run(`
+      MATCH (a:Assignment)
+      RETURN a.id AS id, a.createdAt AS createdAt
+      ORDER BY a.createdAt DESC
+      LIMIT 1
+    `);
+
+    const assignmentId = aRes.records.length ? toNum(aRes.records[0].get("id")) : null;
+
+    // 2) načti všechny budovy a jejich patra
+    const bfRes = await session.run(`
+      MATCH (b:Building)
+      OPTIONAL MATCH (b)-[:HAS_FLOOR]->(f:Floor)
+      RETURN b.id AS buildingId, b.name AS buildingName,
+             f.id AS floorId, f.level AS level, f.capacity AS capacity
+      ORDER BY buildingId, level
+    `);
+
+    // složení struktury buildings -> floors
+    const buildingById = new Map();
+
+    for (const r of bfRes.records) {
+      const bId = toNum(r.get("buildingId"));
+      const bName = r.get("buildingName");
+
+      if (!buildingById.has(bId)) {
+        buildingById.set(bId, {
+          id: bId,
+          name: bName,
+          floors: [],
+        });
+      }
+
+      const floorId = r.get("floorId");
+      if (floorId != null) {
+        buildingById.get(bId).floors.push({
+          id: toNum(floorId),
+          level: toNum(r.get("level")),
+          capacity: toNum(r.get("capacity")),
+          occupied: 0,
+          departments: [],
+        });
+      }
+    }
+
+    const buildings = Array.from(buildingById.values());
+
+    // mapa floorId -> floor objekt (napříč budovami)
+    const floorById = new Map();
+    for (const b of buildings) {
+      for (const f of b.floors) {
+        floorById.set(f.id, f);
+      }
+    }
+
+    // 3) načti placementy pro poslední assignment a naplň floors.departments + occupied
+    if (assignmentId !== null && floorById.size > 0) {
+      const plRes = await session.run(
+        `
+        MATCH (a:Assignment {id:$assignmentId})-[:HAS_PLACEMENT]->(pl:Placement)
+        MATCH (pl)-[:OF_DEPARTMENT]->(d:Department)
+        MATCH (pl)-[:ON_FLOOR]->(f:Floor)
+        OPTIONAL MATCH (d)<-[:WORKS_IN]-(p:Person)
+        RETURN f.id AS floorId,
+               d.id AS deptId,
+               d.name AS deptName,
+               count(p) AS people,
+               coalesce(pl.locked, false) AS locked
+        ORDER BY f.id, d.id
+        `,
+        { assignmentId }
+      );
+
+      for (const r of plRes.records) {
+        const floorId = toNum(r.get("floorId"));
+        const floor = floorById.get(floorId);
+        if (!floor) continue;
+
+        const people = toNum(r.get("people"));
+
+        floor.departments.push({
+          id: toNum(r.get("deptId")),
+          name: r.get("deptName"),
+          size: people,
+          locked: !!r.get("locked"),
+        });
+
+        floor.occupied += people;
+      }
+    }
+
+    // 4) unassigned: dept bez placementu v posledním assignmentu
+    // - pokud assignmentId = null -> všechna oddělení jsou unassigned
+    if (assignmentId === null) {
+      const allDepts = await session.run(`
+        MATCH (d:Department)
+        OPTIONAL MATCH (d)<-[:WORKS_IN]-(p:Person)
+        RETURN d.id AS id, d.name AS name, count(p) AS size
+        ORDER BY id
+      `);
+
+      const unassignedDepartments = allDepts.records.map((r) => ({
+        id: toNum(r.get("id")),
+        name: r.get("name"),
+        size: toNum(r.get("size")),
+      }));
+
+      return res.json({ assignmentId, buildings, unassignedDepartments });
+    }
+
+    const unassignedRes = await session.run(
+      `
+      MATCH (d:Department)
+      OPTIONAL MATCH (d)<-[:WORKS_IN]-(p:Person)
+      WITH d, count(p) AS people
+      OPTIONAL MATCH (a:Assignment {id:$assignmentId})-[:HAS_PLACEMENT]->(pl:Placement)-[:OF_DEPARTMENT]->(d)
+      WITH d, people, pl
+      WHERE pl IS NULL
+      RETURN d.id AS id, d.name AS name, people AS size
+      ORDER BY id
+      `,
+      { assignmentId }
+    );
+
+    const unassignedDepartments = unassignedRes.records.map((r) => ({
+      id: toNum(r.get("id")),
+      name: r.get("name"),
+      size: toNum(r.get("size")),
+    }));
+
+    res.json({ assignmentId, buildings, unassignedDepartments });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
+  }
+});
+
 app.get("/map/:buildingId", async (req, res) => {
   const session = driver.session();
   const buildingId = Number(req.params.buildingId);
