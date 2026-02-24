@@ -4,10 +4,7 @@ const { toNum } = require("../utils/neo4jUtils");
 
 const router = express.Router();
 
-/**
- * POST /assignments/run
- * Automatický alokační algoritmus (Best Fit Decreasing)
- */
+// POST /assignment/run
 router.post("/run", async (req, res) => {
   const session = driver.session();
   try {
@@ -130,10 +127,7 @@ router.post("/run", async (req, res) => {
   }
 });
 
-/**
- * POST /assignments/move
- * Manuální přesun oddělení s validací kapacity
- */
+// POST /assignments/move
 router.post("/move", async (req, res) => {
   const session = driver.session();
   const { departmentId, targetFloorId } = req.body;
@@ -211,6 +205,8 @@ router.post("/move", async (req, res) => {
   }
 });
 
+
+// POST /assignments/clear
 router.post("/clear", async (req, res) => {
   const session = driver.session();
   const newId = Date.now();
