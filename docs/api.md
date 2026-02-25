@@ -49,12 +49,35 @@ POST /departments/:id/collaboration
 - nastavení nebo změna spolupracujícího oddělení
 - Body: { "collaboratesWithId": 1 }
 
+## Floor
 
+PUT /floors:id
+- úprava kapacity patra
 
-## Scenarios
-POST /scenarios
-GET  /scenarios/:id
-POST /scenarios/:id/run
+DELETE /floors/:id
+- smazání patra
+
+## Map
+
+GET /map
+- vypíše všechny budovy, jejich patra, kapacity, usazená oddělení a neusazená oddělení
+
+GET /map/:buildingId
+- detail jedné budovy a neusazené oddělení
+
+## Persons
+
+GET /persons
+- seznam všech zaměstnanců a jejich aktuální oddělení
+
+POST /persons
+- vytvoření nové osoby
+
+PUT /persons/:id/department
+- přiřazení osoby do oddělení
+
+DELETE /persons/:id
+- smazání osoby
 
 ## Utilities
 GET /health
