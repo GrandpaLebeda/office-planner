@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OfficePlanner - Interní systém</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-item.active {
+            background-color: white;
+            color: #2563eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .floor-drop-zone.drag-over {
+            background-color: rgba(37, 99, 235, 0.05);
+            outline: 2px dashed #2563eb;
+        }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+        }
+    </style>
+</head>
+<body class="bg-[#f0f2f5] text-slate-900 overflow-hidden">
+
+    <!-- TOP NAVBAR -->
+    <header class="h-14 bg-[#2b6be6] flex items-center justify-between px-6 shadow-md relative z-50">
+        <div class="flex items-center gap-3">
+            <div class="bg-white p-1 rounded-md text-[#2b6be6]">
+                <i data-lucide="building-2" size="20"></i>
+            </div>
+            <span class="text-white font-bold text-lg tracking-tight">OfficePlanner</span>
+        </div>
+        <h2 id="page-title" class="text-white font-semibold text-lg absolute left-1/2 -translate-x-1/2">Mapa</h2>
+        <div class="flex items-center gap-6">
+            <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#2b6be6] cursor-pointer">
+                <i data-lucide="user" size="18"></i>
+            </div>
+            <button class="text-white text-xs flex items-center gap-1 opacity-90 hover:opacity-100 transition-opacity">
+                <i data-lucide="log-out" size="14"></i> Odhlásit se
+            </button>
+        </div>
+    </header>
+
+    <div class="flex h-[calc(100vh-3.5rem)]">
+        
+        <!-- LEFT SIDEBAR NAVIGATION -->
+        <nav class="w-64 bg-[#f8f9fa] border-r border-slate-200 p-3 flex flex-col gap-1">
+            <button onclick="switchView('map')" id="nav-map" class="sidebar-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all">
+                <i data-lucide="map" size="18"></i> Mapa
+            </button>
+            <button onclick="switchView('buildings')" id="nav-buildings" class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-all">
+                <i data-lucide="layout" size="18"></i> Správa Budov
+            </button>
+            <button onclick="switchView('departments')" id="nav-departments" class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-all">
+                <i data-lucide="users-2" size="18"></i> Správa Týmů
+            </button>
+            <button onclick="switchView('persons')" id="nav-persons" class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-all">
+                <i data-lucide="user-plus" size="18"></i> Správa Zaměstnanců
+            </button>
+        </nav>
+
+        <!-- MAIN CONTENT AREA -->
+        <main id="main-content" class="flex-1 overflow-y-auto p-8 relative">
+            <!-- Dynamicky dočítaný obsah přes fetch -->
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/buildings.js"></script>
+    <script src="js/departments.js"></script>
+    <script src="js/persons.js"></script>
+</body>
+</html>

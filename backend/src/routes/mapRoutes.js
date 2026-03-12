@@ -48,10 +48,28 @@ router.get("/", async (req, res) => {
     }
 
     const unassignedQuery = assignmentId === null
-      ? `MATCH (d:Department) OPTIONAL MATCH (d)<-[:WORKS_IN]-(p:Person) RETURN d.id AS id, d.name AS name, count(p) AS size ORDER BY id`
-      : `MATCH (d:Department) OPTIONAL MATCH (d)<-[:WORKS_IN]-(p:Person) WITH d, count(p) AS size OPTIONAL MATCH (a:Assignment {id: $assignmentId})-[:HAS_PLACEMENT]->(pl:Placement)-[:OF_DEPARTMENT]->(d) WHERE pl IS NULL RETURN d.id AS id, d.name AS name, size ORDER BY id`;
+      ? `MATCH (d:Department)
+         OPTIONAL MATCH (d)<-[:WORKS_IN]-(p:Person)
+         OPTIONAL MATCH (d)-[:COLLABORATES_WITH]->(partner:Department)
+         RETURN d.id AS id, d.name AS name, count(p) AS size,
+                partner.id AS collaboratesWithId, partner.name AS collaboratesWithName
+         ORDER BY id`
+      : `MATCH (d:Department)
+         WHERE NOT EXISTS {
+           MATCH (a:Assignment {id: $assignmentId})-[:HAS_PLACEMENT]->(pl:Placement)-[:OF_DEPARTMENT]->(d)
+         }
+         OPTIONAL MATCH (d)<-[:WORKS_IN]-(p:Person)
+         OPTIONAL MATCH (d)-[:COLLABORATES_WITH]->(partner:Department)
+         RETURN d.id AS id, d.name AS name, count(p) AS size,
+                partner.id AS collaboratesWithId, partner.name AS collaboratesWithName
+         ORDER BY id`;
     const unassignedRes = await session.run(unassignedQuery, { assignmentId });
-    const unassignedDepartments = unassignedRes.records.map(r => ({ id: toNum(r.get("id")), name: r.get("name"), size: toNum(r.get("size")) }));
+    const unassignedDepartments = unassignedRes.records.map(r => ({
+      id: toNum(r.get("id")),
+      name: r.get("name"),
+      size: toNum(r.get("size")),
+      collaboratesWith: r.get("collaboratesWithId") ? { id: toNum(r.get("collaboratesWithId")), name: r.get("collaboratesWithName") } : null
+    }));
 
     res.json({ assignmentId, buildings, unassignedDepartments });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -90,10 +108,28 @@ router.get("/:buildingId", async (req, res) => {
     }
 
     const unassignedQuery = assignmentId === null
-      ? `MATCH (d:Department) OPTIONAL MATCH (d)<-[:WORKS_IN]-(p:Person) RETURN d.id AS id, d.name AS name, count(p) AS size ORDER BY id`
-      : `MATCH (d:Department) OPTIONAL MATCH (d)<-[:WORKS_IN]-(p:Person) WITH d, count(p) AS size OPTIONAL MATCH (a:Assignment {id: $assignmentId})-[:HAS_PLACEMENT]->(pl:Placement)-[:OF_DEPARTMENT]->(d) WHERE pl IS NULL RETURN d.id AS id, d.name AS name, size ORDER BY id`;
+      ? `MATCH (d:Department)
+         OPTIONAL MATCH (d)<-[:WORKS_IN]-(p:Person)
+         OPTIONAL MATCH (d)-[:COLLABORATES_WITH]->(partner:Department)
+         RETURN d.id AS id, d.name AS name, count(p) AS size,
+                partner.id AS collaboratesWithId, partner.name AS collaboratesWithName
+         ORDER BY id`
+      : `MATCH (d:Department)
+         WHERE NOT EXISTS {
+           MATCH (a:Assignment {id: $assignmentId})-[:HAS_PLACEMENT]->(pl:Placement)-[:OF_DEPARTMENT]->(d)
+         }
+         OPTIONAL MATCH (d)<-[:WORKS_IN]-(p:Person)
+         OPTIONAL MATCH (d)-[:COLLABORATES_WITH]->(partner:Department)
+         RETURN d.id AS id, d.name AS name, count(p) AS size,
+                partner.id AS collaboratesWithId, partner.name AS collaboratesWithName
+         ORDER BY id`;
     const unassignedRes = await session.run(unassignedQuery, { assignmentId });
-    const unassignedDepartments = unassignedRes.records.map(r => ({ id: toNum(r.get("id")), name: r.get("name"), size: toNum(r.get("size")) }));
+    const unassignedDepartments = unassignedRes.records.map(r => ({
+      id: toNum(r.get("id")),
+      name: r.get("name"),
+      size: toNum(r.get("size")),
+      collaboratesWith: r.get("collaboratesWithId") ? { id: toNum(r.get("collaboratesWithId")), name: r.get("collaboratesWithName") } : null
+    }));
 
     res.json({ assignmentId, building: { id: toNum(bRes.records[0].get("id")), name: bRes.records[0].get("name") }, floors, unassignedDepartments });
   } catch (err) { res.status(500).json({ error: err.message }); }

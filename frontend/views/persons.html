@@ -1,0 +1,68 @@
+<div class="p-8 max-w-7xl mx-auto h-full flex flex-col pt-12">
+    
+    <!-- Top actions row -->
+    <div class="flex flex-col lg:flex-row gap-6 mb-8 justify-between items-end lg:items-center w-full">
+        <!-- Add Person Form -->
+        <div class="flex flex-wrap items-center gap-4 bg-transparent w-full lg:w-auto">
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold text-[#1f2937]">Jméno</span>
+                <input type="text" id="person-firstname" class="w-48 border border-[#cbd5e1] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white shadow-sm h-8">
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold text-[#1f2937]">Příjmení</span>
+                <input type="text" id="person-surname" class="w-48 border border-[#cbd5e1] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white shadow-sm h-8">
+            </div>
+            <button onclick="createPerson()" class="bg-[#2b6be6] hover:bg-blue-700 text-white px-5 py-1.5 rounded-full font-bold text-xs shadow-md transition-all h-8 flex items-center">
+                Přidat zaměstnance
+            </button>
+        </div>
+
+        <!-- Search Form -->
+        <div class="relative w-full lg:w-72 flex items-center justify-end gap-3 text-blue-600">
+            <i data-lucide="search" class="w-5 h-5 flex-shrink-0"></i>
+            <input type="text" id="search-person" placeholder="Vyhledat zaměstnance" oninput="filterPersons()" class="w-64 border border-[#cbd5e1] rounded-lg pl-3 pr-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white shadow-sm h-8">
+        </div>
+    </div>
+
+    <!-- Main List Container -->
+    <div class="bg-[#e2e2e2] rounded-[32px] p-8 shadow-inner flex flex-col flex-1 relative border border-slate-200/50">
+        <h2 class="text-[17px] font-bold text-[#1e293b] mb-8 mt-1">Seznam zaměstnanců</h2>
+
+        <!-- Table Header -->
+        <div class="grid grid-cols-[3fr_2fr_2fr_2fr_120px] gap-6 px-10 text-[15px] font-bold text-[#1f2937] mb-4 items-center">
+            <span>Jméno</span>
+            <span>Tým</span>
+            <span>Budova</span>
+            <span>Patro</span>
+            <span></span>
+        </div>
+
+        <!-- Scrollable List -->
+        <div id="persons-list" class="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-8">
+            <!-- Dynamic rows will be rendered here -->
+            <div class="text-center py-20 text-slate-500 font-medium">Načítání zaměstnanců...</div>
+        </div>
+        
+        <!-- Decoration strip on the right side from mockup -->
+        <div class="absolute right-4 top-16 bottom-16 w-1.5 bg-white/50 rounded-full pointer-events-none hidden md:block"></div>
+    </div>
+</div>
+
+<!-- MODAL: DELETE CONFIRMATION -->
+<div id="modal-delete-person-confirm" class="modal-overlay hidden fixed inset-0 z-[110] flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div class="p-8 text-center flex flex-col items-center gap-4">
+            <h3 class="text-xl font-bold text-[#1e293b]">Opravdu chcete smazat tohoto zaměstnance?</h3>
+            <p class="text-sm text-slate-600 mb-6">Tato akce je nevratná.</p>
+            
+            <div class="flex gap-4 w-full border-t border-slate-100 pt-6 justify-center">
+                <button onclick="closePersonDeleteModal()" class="px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors">
+                    Zrušit
+                </button>
+                <button onclick="confirmDeletePerson()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-md transition-colors">
+                    Smazat
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

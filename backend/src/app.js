@@ -1,7 +1,10 @@
+/**
+ * app.js — Express aplikace bez listen().
+ * Importuji ho zvlášť, aby jej testy mohly načíst bez spuštění serveru.
+ */
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { driver } = require("./db");
 
 // Import Routes
 const mapRoutes = require("./routes/mapRoutes");
@@ -9,7 +12,8 @@ const buildingRoutes = require("./routes/buildingRoutes");
 const departmentRoutes = require("./routes/departmentRoutes");
 const personRoutes = require("./routes/personRoutes");
 const floorRoutes = require("./routes/floorRoutes");
-const assignmentRoutes = require("./routes/assignmentRoutes"); // Nový import
+const assignmentRoutes = require("./routes/assignmentRoutes");
+const { driver } = require("./db");
 
 const app = express();
 app.use(cors());
@@ -31,20 +35,17 @@ app.use("/buildings", buildingRoutes);
 app.use("/departments", departmentRoutes);
 app.use("/persons", personRoutes);
 app.use("/floors", floorRoutes);
-app.use("/assignments", assignmentRoutes); // Registrace nové cesty
+app.use("/assignments", assignmentRoutes);
 
-// 404 handler — neznámé routes
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: `Endpoint ${req.method} ${req.path} neexistuje.` });
 });
 
 // Global error handler
 app.use((err, req, res, _next) => {
-  console.error('[Global Error]', err);
-  res.status(500).json({ error: err.message || 'Interní chyba serveru.' });
+  console.error("[Global Error]", err);
+  res.status(500).json({ error: err.message || "Interní chyba serveru." });
 });
 
-const port = Number(process.env.PORT || 3000);
-app.listen(port, () => {
-  console.log(`API running on http://localhost:${port}`);
-});
+module.exports = app;

@@ -22,32 +22,79 @@ router.get("/", async (req, res) => {
 
 /**
  * POST /buildings
- * Vytvoření budovy s kontrolou duplicity (ID i Název)
+ * Vytvoření budovy s autoincrement ID
  */
 router.post("/", async (req, res) => {
   const session = driver.session();
-  const { id, name } = req.body;
+  const { name } = req.body;
 
-  if (!id || isNaN(Number(id))) return res.status(400).json({ error: "ID budovy musí být číslo." });
   if (!name || name.trim().length < 2) return res.status(400).json({ error: "Název budovy musí mít alespoň 2 znaky." });
 
   try {
     const check = await session.run(
-      "MATCH (b:Building) WHERE b.id = $id OR b.name = $name RETURN b",
-      { id: Number(id), name: name.trim() }
+      "MATCH (b:Building) WHERE b.name = $name RETURN b",
+      { name: name.trim() }
     );
 
     if (check.records.length > 0) {
-      return res.status(409).json({ error: "Budova se stejným ID nebo názvem již existuje." });
+      return res.status(409).json({ error: "Budova se stejným názvem již existuje." });
     }
+
+    // Auto-increment logic
+    const idResult = await session.run(`
+      MATCH (b:Building) 
+      RETURN coalesce(max(b.id), 0) + 1 AS nextId
+    `);
+    const nextId = toNum(idResult.records[0].get("nextId"));
 
     const result = await session.run(`
       CREATE (b:Building {id: $id, name: $name})
       RETURN b.id AS id, b.name AS name
-    `, { id: Number(id), name: name.trim() });
+    `, { id: nextId, name: name.trim() });
     
     const r = result.records[0];
     res.status(201).json({ id: toNum(r.get("id")), name: r.get("name") });
+  } catch (err) { 
+    res.status(500).json({ error: err.message }); 
+  } finally { 
+    await session.close(); 
+  }
+});
+
+/**
+ * PUT /buildings/:id
+ * Úprava názvu budovy
+ */
+router.put("/:id", async (req, res) => {
+  const session = driver.session();
+  const id = Number(req.params.id);
+  const { name } = req.body;
+
+  if (isNaN(id)) return res.status(400).json({ error: "ID budovy musí být číslo." });
+  if (!name || name.trim().length < 2) return res.status(400).json({ error: "Název budovy musí mít alespoň 2 znaky." });
+
+  try {
+    const checkDuplicate = await session.run(
+      "MATCH (b:Building) WHERE b.name = $name AND b.id <> $id RETURN b",
+      { id, name: name.trim() }
+    );
+
+    if (checkDuplicate.records.length > 0) {
+      return res.status(409).json({ error: "Budova se stejným názvem již existuje." });
+    }
+
+    const result = await session.run(`
+      MATCH (b:Building {id: $id})
+      SET b.name = $name
+      RETURN b.id AS id, b.name AS name
+    `, { id, name: name.trim() });
+
+    if (result.records.length === 0) {
+      return res.status(404).json({ error: "Budova s tímto ID nebyla nalezena." });
+    }
+    
+    const r = result.records[0];
+    res.json({ id: toNum(r.get("id")), name: r.get("name") });
   } catch (err) { 
     res.status(500).json({ error: err.message }); 
   } finally { 

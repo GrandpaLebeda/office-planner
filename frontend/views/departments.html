@@ -1,0 +1,99 @@
+<div class="p-8 max-w-7xl mx-auto h-full flex flex-col pt-12">
+    
+    <!-- Top actions row -->
+    <div class="flex flex-col lg:flex-row gap-6 mb-8 justify-between items-end lg:items-center w-full">
+        <!-- Add Department Form -->
+        <div class="flex flex-wrap items-center gap-4 bg-transparent w-full lg:w-auto">
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold text-[#1f2937]">Název</span>
+                <input type="text" id="dept-name" class="w-64 border border-[#cbd5e1] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white shadow-sm h-8">
+            </div>
+            <button onclick="createDepartment()" class="bg-[#2b6be6] hover:bg-blue-700 text-white px-5 py-1.5 rounded-full font-bold text-xs shadow-md transition-all h-8 flex items-center">
+                Přidat tým
+            </button>
+        </div>
+    </div>
+
+    <!-- Main List Container -->
+    <div class="bg-white rounded-[16px] p-8 shadow-sm flex flex-col flex-1 relative border border-slate-200">
+        <h2 class="text-[17px] font-bold text-[#1e293b] mb-8 mt-1">Seznam týmů</h2>
+
+        <!-- Scrollable List -->
+        <div id="departments-list" class="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-8">
+            <!-- Dynamic rows will be rendered here -->
+            <div class="text-center py-20 text-slate-500 font-medium">Načítání týmů...</div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: DEPARTMENT SETTINGS -->
+<div id="modal-department-settings" class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div class="flex justify-between items-center px-8 py-6 border-b border-slate-100">
+            <h3 class="text-xl font-bold text-[#1e293b]">Nastavení týmu</h3>
+            <button onclick="closeDeptModal()" class="text-blue-600 font-bold text-sm hover:underline">Zavřít ×</button>
+        </div>
+        <div class="p-8">
+            <div class="mb-6">
+                <label class="text-xs font-bold text-slate-500 mb-2 block">Název týmu</label>
+                <input type="text" id="edit-d-name" class="w-full border border-slate-200 rounded-lg px-4 py-2 bg-white outline-none focus:border-blue-500 text-sm">
+            </div>
+
+            <div class="mb-8 border-b border-slate-100 pb-8">
+                <label class="text-xs font-bold text-slate-500 mb-2 block">Spolupracuje s (preferuje stejnou budovu):</label>
+                <select id="edit-d-collab" class="w-full border border-slate-200 rounded-lg px-4 py-2 bg-white outline-none focus:border-blue-500 text-sm text-slate-700 cursor-pointer">
+                    <!-- Loaded dynamically -->
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-500 mb-3 block">Aktuální členové</label>
+                <div class="flex gap-4 items-center">
+                    <input type="text" id="search-person-add" placeholder="Vyhledat zaměstnance" list="persons-datalist" autocomplete="off" class="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white outline-none focus:border-blue-500 text-sm">
+                    <datalist id="persons-datalist"></datalist>
+                    <button onclick="addPersonToDept()" class="bg-[#2b6be6] hover:bg-blue-700 text-white px-5 py-2 rounded-full font-bold text-xs shadow-md transition-all whitespace-nowrap">
+                        Přidat člena
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 rounded-xl p-4 min-h-[120px] max-h-[200px] overflow-y-auto mb-6 flex flex-col gap-2 relative">
+                <div id="dept-members-list" class="flex flex-col gap-2">
+                    <!-- Members list dynamically loaded -->
+                </div>
+                <!-- Empty members placeholder -->
+                <div id="dept-members-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                    <div class="flex items-center justify-center h-12 w-20 mb-2 opacity-80">
+                         <img src="https://api.iconify.design/fluent-emoji:people-hugging.svg" class="h-full object-contain" alt="lidi">
+                    </div>
+                    <span class="text-sm font-bold text-[#1e293b]">Zatím zde nejsou žádní členové</span>
+                </div>
+            </div>
+
+            <div class="flex justify-center mt-8">
+                <button onclick="saveDepartmentSettings()" class="bg-[#2b6be6] hover:bg-blue-700 text-white px-12 py-3 rounded-full font-bold text-sm shadow-md transition-all">
+                    Uložit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: DELETE CONFIRMATION -->
+<div id="modal-delete-dept-confirm" class="modal-overlay hidden fixed inset-0 z-[110] flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div class="p-8 text-center flex flex-col items-center gap-4">
+            <h3 class="text-xl font-bold text-[#1e293b]">Opravdu chcete smazat tento tým?</h3>
+            <p class="text-sm text-slate-600 mb-6">Tato akce je nevratná.</p>
+            
+            <div class="flex gap-4 w-full border-t border-slate-100 pt-6 justify-center">
+                <button onclick="closeDeptDeleteModal()" class="px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors">
+                    Zrušit
+                </button>
+                <button onclick="confirmDeleteDept()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-md transition-colors">
+                    Smazat
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
