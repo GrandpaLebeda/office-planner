@@ -1,6 +1,7 @@
 const express = require("express");
 const { driver } = require("../db");
 const { toNum } = require("../utils/neo4jUtils");
+const { solveAllocation } = require("../utils/ilpSolver");
 
 const router = express.Router();
 
@@ -67,63 +68,57 @@ router.post("/run", async (req, res) => {
       }
     });
 
-    // 4) Algoritmus pro zbytek
-    let unassigned = departments
-      .filter(d => !lockedDeptIds.has(d.id))
-      .sort((a, b) => b.size - a.size);
+    // 4) Načtení COLLABORATES_WITH hran
+    const collabRes = await session.run(`
+      MATCH (d:Department)-[:COLLABORATES_WITH]->(p:Department)
+      RETURN d.id AS deptId, p.id AS partnerId
+    `);
+    const collaborations = collabRes.records.map(r => ({
+      deptId: toNum(r.get("deptId")),
+      partnerId: toNum(r.get("partnerId"))
+    }));
 
-    const failed = [];
-    for (const d of unassigned) {
-      let best = null; 
-      let minSpace = Infinity;
-      for (const f of floors) {
-        const rem = f.capacity - f.occupied;
-        if (rem >= d.size && rem < minSpace) { 
-          minSpace = rem; 
-          best = f; 
-        }
-      }
-      if (best) { 
-        best.occupied += d.size; 
-        best.assignedDepts.push({ ...d, locked: false }); 
-      } else {
-        failed.push(d);
-      }
-    }
+    // 5) ILP solver
+    const { assignments, failed, collaborationScore, totalCollabPairs } = solveAllocation({
+      departments,
+      floors,
+      lockedPlacements,
+      collaborations,
+    });
 
-    // 5) Uložení do databáze
+    // 6) Uložení do databáze
     const newAssignmentId = Date.now();
     await session.run(`CREATE (a:Assignment {id: $id, createdAt: datetime()})`, { id: newAssignmentId });
-    
-    for (const f of floors) {
-      for (const d of f.assignedDepts) {
-        await session.run(`
-          MATCH (a:Assignment {id:$aId}), (dept:Department {id:$dId}), (fl:Floor {id:$fId}) 
-          CREATE (a)-[:HAS_PLACEMENT]->(pl:Placement {
-            id: "PL_"+$aId+"_"+$dId, 
-            locked: $l, 
-            updatedAt: datetime(),
-            source: "automatic"
-          }), 
-          (pl)-[:OF_DEPARTMENT]->(dept), 
-          (pl)-[:ON_FLOOR]->(fl)
-        `, { aId: newAssignmentId, dId: d.id, fId: f.id, l: d.locked });
-      }
+
+    for (const asgn of assignments) {
+      await session.run(`
+        MATCH (a:Assignment {id:$aId}), (dept:Department {id:$dId}), (fl:Floor {id:$fId})
+        CREATE (a)-[:HAS_PLACEMENT]->(pl:Placement {
+          id: "PL_"+$aId+"_"+$dId,
+          locked: $l,
+          updatedAt: datetime(),
+          source: "automatic_ilp"
+        }),
+        (pl)-[:OF_DEPARTMENT]->(dept),
+        (pl)-[:ON_FLOOR]->(fl)
+      `, { aId: newAssignmentId, dId: asgn.deptId, fId: asgn.floorId, l: asgn.locked });
     }
 
-    res.json({ 
-      success: true, 
-      details: { 
-        assignmentId: newAssignmentId, 
-        totalAssigned: departments.length - failed.length, 
+    res.json({
+      success: true,
+      details: {
+        assignmentId: newAssignmentId,
+        totalAssigned: departments.length - failed.length,
         totalFailed: failed.length,
-        failedDepartments: failed
-      } 
+        failedDepartments: failed,
+        collaborationScore,
+        totalCollabPairs,
+      }
     });
-  } catch (err) { 
-    res.status(500).json({ error: err.message }); 
-  } finally { 
-    await session.close(); 
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
   }
 });
 
