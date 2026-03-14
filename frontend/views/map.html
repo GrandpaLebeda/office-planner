@@ -1,19 +1,20 @@
-<div class="flex gap-8 h-full">
-    <div class="flex-1 flex flex-col">
+<div class="page-container pt-12">
+    <div class="flex gap-8 h-full w-full">
+        <div class="flex-1 flex flex-col">
         <!-- Filters & Stats Header -->
         <div class="flex flex-col gap-4 mb-6 mt-4">
             <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <span class="text-[13px] font-bold text-[#1f2937]">Vyber budovu</span>
-                    <select id="building-selector" onchange="fetchMap()" class="bg-white border border-[#cbd5e1] rounded-lg px-3 py-1.5 text-sm font-medium min-w-[180px] shadow-sm outline-none focus:border-blue-500 h-8">
+                <div class="flex items-center gap-3 w-72">
+                    <span class="form-label mb-0 whitespace-nowrap">Vyber budovu</span>
+                    <select id="building-selector" onchange="fetchMap()" class="form-input flex-1">
                         <option value="">Načítání...</option>
                     </select>
                 </div>
                 <div class="flex gap-3">
-                    <button onclick="runAutoAllocation()" class="bg-[#2b6be6] hover:bg-blue-700 text-white px-5 py-1.5 rounded-full text-xs font-bold transition-all shadow-md h-8 flex items-center">
+                    <button onclick="runAutoAllocation()" class="btn btn-primary px-5">
                         Alokovat všechny týmy
                     </button>
-                    <button onclick="clearMap()" class="bg-[#ff4d4d] hover:bg-red-600 text-white px-5 py-1.5 rounded-full text-xs font-bold transition-all shadow-md h-8 flex items-center">
+                    <button onclick="clearMap()" class="btn btn-danger px-5">
                         Vyčistit mapu
                     </button>
                 </div>
@@ -27,7 +28,7 @@
         </div>
 
         <!-- Building Main View Card -->
-        <div id="building-container" class="bg-white rounded-[32px] shadow-sm border border-slate-200/50 flex-1 p-12 overflow-y-auto">
+        <div id="building-container" class="panel flex-1 p-12 overflow-y-auto w-full">
             <!-- Vykreslí se dynamicky -->
             <div class="text-center py-20 text-slate-400">Vyberte budovu pro zobrazení mapy</div>
         </div>
@@ -35,13 +36,15 @@
 
     <!-- Right Sidebar: Unassigned Teams -->
     <div class="w-80 flex flex-col h-full overflow-hidden">
-        <div class="bg-[#e2e2e2]/40 rounded-[32px] border border-slate-200/50 flex flex-col h-full">
-            <div class="p-8 text-center">
-                <h3 class="font-bold text-[#1e293b] text-base">Neusazené týmy</h3>
+        <div class="panel bg-slate-50 flex flex-col h-full border-none p-0">
+            <div class="p-6 text-center border-b border-slate-200/50">
+                <h3 class="panel-title m-0">Neusazené týmy</h3>
             </div>
-            <div id="unassigned-list" class="flex-1 overflow-y-auto px-6 pb-6 space-y-3 custom-scrollbar">
+            <div id="unassigned-list" class="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
                 <!-- Dynamický obsah -->
             </div>
         </div>
     </div>
+    </div>
+</div>
 </div>

@@ -1,22 +1,29 @@
-<div class="p-8 max-w-7xl mx-auto h-full flex flex-col pt-12">
+<div class="page-container pt-12">
     
     <!-- Top actions row -->
     <div class="flex flex-col lg:flex-row gap-6 mb-8 justify-between items-end lg:items-center w-full">
         <!-- Add Department Form -->
         <div class="flex flex-wrap items-center gap-4 bg-transparent w-full lg:w-auto">
             <div class="flex items-center gap-3">
-                <span class="text-xs font-bold text-[#1f2937]">Název</span>
-                <input type="text" id="dept-name" class="w-64 border border-[#cbd5e1] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white shadow-sm h-8">
+                <span class="form-label mb-0">Název</span>
+                <input type="text" id="dept-name" class="form-input w-64">
             </div>
-            <button onclick="createDepartment()" class="bg-[#2b6be6] hover:bg-blue-700 text-white px-5 py-1.5 rounded-full font-bold text-xs shadow-md transition-all h-8 flex items-center">
+            <button onclick="createDepartment()" class="btn btn-primary px-5">
                 Přidat tým
             </button>
         </div>
     </div>
 
     <!-- Main List Container -->
-    <div class="bg-white rounded-[16px] p-8 shadow-sm flex flex-col flex-1 relative border border-slate-200">
-        <h2 class="text-[17px] font-bold text-[#1e293b] mb-8 mt-1">Seznam týmů</h2>
+    <div class="panel content-panel">
+        <h2 class="panel-title mb-8 mt-1">Seznam týmů</h2>
+
+        <!-- Table Header -->
+        <div class="grid grid-cols-[3fr_2fr_180px] gap-6 px-10 text-[15px] font-bold text-[#1f2937] mb-4 items-center">
+            <span>Název týmu</span>
+            <span class="text-center">Počet členů</span>
+            <span></span>
+        </div>
 
         <!-- Scrollable List -->
         <div id="departments-list" class="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-8">
@@ -28,50 +35,48 @@
 
 <!-- MODAL: DEPARTMENT SETTINGS -->
 <div id="modal-department-settings" class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div class="flex justify-between items-center px-8 py-6 border-b border-slate-100">
-            <h3 class="text-xl font-bold text-[#1e293b]">Nastavení týmu</h3>
-            <button onclick="closeDeptModal()" class="text-blue-600 font-bold text-sm hover:underline">Zavřít ×</button>
+    <div class="modal-content max-w-xl animate-in fade-in zoom-in duration-200">
+        <div class="modal-header">
+            <h3>Nastavení týmu</h3>
+            <button onclick="closeDeptModal()" class="modal-close">Zavřít &times;</button>
         </div>
         <div class="p-8">
             <div class="mb-6">
-                <label class="text-xs font-bold text-slate-500 mb-2 block">Název týmu</label>
-                <input type="text" id="edit-d-name" class="w-full border border-slate-200 rounded-lg px-4 py-2 bg-white outline-none focus:border-blue-500 text-sm">
+                <label class="form-label">Název týmu</label>
+                <input type="text" id="edit-d-name" class="form-input">
             </div>
 
             <div class="mb-8 border-b border-slate-100 pb-8">
-                <label class="text-xs font-bold text-slate-500 mb-2 block">Spolupracuje s (preferuje stejnou budovu):</label>
-                <select id="edit-d-collab" class="w-full border border-slate-200 rounded-lg px-4 py-2 bg-white outline-none focus:border-blue-500 text-sm text-slate-700 cursor-pointer">
+                <label class="form-label">Spolupracuje s (preferuje stejnou budovu):</label>
+                <select id="edit-d-collab" class="form-input text-slate-700 cursor-pointer">
                     <!-- Loaded dynamically -->
                 </select>
             </div>
             
             <div class="mb-4">
-                <label class="text-xs font-bold text-slate-500 mb-3 block">Aktuální členové</label>
-                <div class="flex gap-4 items-center">
-                    <input type="text" id="search-person-add" placeholder="Vyhledat zaměstnance" list="persons-datalist" autocomplete="off" class="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white outline-none focus:border-blue-500 text-sm">
-                    <datalist id="persons-datalist"></datalist>
-                    <button onclick="addPersonToDept()" class="bg-[#2b6be6] hover:bg-blue-700 text-white px-5 py-2 rounded-full font-bold text-xs shadow-md transition-all whitespace-nowrap">
-                        Přidat člena
+                <div class="flex justify-between items-center mb-3">
+                    <label class="form-label mb-0">Aktuální členové</label>
+                    <button onclick="openAddPersonToDeptModal()" class="text-[#2b6be6] hover:text-[#1d4ed8] text-sm font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> Přidat člena
                     </button>
                 </div>
             </div>
 
-            <div class="bg-slate-50 rounded-xl p-4 min-h-[120px] max-h-[200px] overflow-y-auto mb-6 flex flex-col gap-2 relative">
+            <div class="bg-slate-50 rounded-xl p-4 min-h-[120px] max-h-[200px] overflow-y-auto mb-6 flex flex-col gap-2 relative custom-scrollbar">
                 <div id="dept-members-list" class="flex flex-col gap-2">
                     <!-- Members list dynamically loaded -->
                 </div>
                 <!-- Empty members placeholder -->
                 <div id="dept-members-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-                    <div class="flex items-center justify-center h-12 w-20 mb-2 opacity-80">
-                         <img src="https://api.iconify.design/fluent-emoji:people-hugging.svg" class="h-full object-contain" alt="lidi">
+                    <div class="h-12 w-12 mb-2 rounded-full bg-[#f0f5ff] flex items-center justify-center text-[#2b6be6] mx-auto">
+                        <i class="fa-solid fa-user-plus text-xl"></i>
                     </div>
                     <span class="text-sm font-bold text-[#1e293b]">Zatím zde nejsou žádní členové</span>
                 </div>
             </div>
 
             <div class="flex justify-center mt-8">
-                <button onclick="saveDepartmentSettings()" class="bg-[#2b6be6] hover:bg-blue-700 text-white px-12 py-3 rounded-full font-bold text-sm shadow-md transition-all">
+                <button onclick="saveDepartmentSettings()" class="btn btn-primary px-12">
                     Uložit
                 </button>
             </div>
@@ -81,18 +86,44 @@
 
 <!-- MODAL: DELETE CONFIRMATION -->
 <div id="modal-delete-dept-confirm" class="modal-overlay hidden fixed inset-0 z-[110] flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div class="modal-content max-w-sm animate-in fade-in zoom-in duration-200">
         <div class="p-8 text-center flex flex-col items-center gap-4">
-            <h3 class="text-xl font-bold text-[#1e293b]">Opravdu chcete smazat tento tým?</h3>
-            <p class="text-sm text-slate-600 mb-6">Tato akce je nevratná.</p>
+            <h3 class="text-xl font-bold text-[#1e293b] m-0">Opravdu chcete smazat tento tým?</h3>
+            <p class="text-sm text-slate-600 mb-6 m-0">Tato akce je nevratná.</p>
             
             <div class="flex gap-4 w-full border-t border-slate-100 pt-6 justify-center">
-                <button onclick="closeDeptDeleteModal()" class="px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors">
+                <button onclick="closeDeptDeleteModal()" class="btn btn-secondary">
                     Zrušit
                 </button>
-                <button onclick="confirmDeleteDept()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-md transition-colors">
+                <button onclick="confirmDeleteDept()" class="btn btn-danger">
                     Smazat
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ADD PERSON TO DEPT -->
+<div id="modal-add-person-to-dept" class="modal-overlay hidden fixed inset-0 z-[120] flex items-center justify-center p-4 border-none">
+    <div class="modal-content max-w-xl animate-in fade-in zoom-in duration-200">
+        <div class="modal-header">
+            <h3>Přidat člena do týmu</h3>
+            <button onclick="closeAddPersonToDeptModal()" class="modal-close">Zavřít &times;</button>
+        </div>
+        <div class="p-8">
+            <div class="mb-4">
+                <input type="text" id="search-person-add-modal" placeholder="Vyhledat z nezařazených zaměstnanců..." onkeyup="filterAddPersonModal(this.value)" autocomplete="off" class="form-input w-full">
+            </div>
+            
+            <div class="bg-slate-50 border border-slate-100 rounded-xl p-2 mb-6 h-[240px] overflow-y-auto custom-scrollbar">
+                <div id="modal-unassigned-persons-list" class="flex flex-col gap-1">
+                    <!-- Javascript rendered list -->
+                </div>
+            </div>
+            
+            <div class="flex gap-4 w-full justify-center pt-2 border-t border-slate-100">
+                <button onclick="closeAddPersonToDeptModal()" class="btn btn-secondary w-32">Zrušit</button>
+                <button onclick="confirmAddPersonToDept()" class="btn btn-primary w-32" id="btn-confirm-add-person" disabled>Přidat</button>
             </div>
         </div>
     </div>

@@ -31,11 +31,11 @@ function renderDepartmentsList() {
 
     if (departmentsList.length === 0) {
         listContainer.innerHTML = `
-            <div class="flex flex-col items-center justify-center p-12 text-center h-full gap-4">
-                <div class="h-16 w-32 flex items-center justify-center">
-                    <img src="https://api.iconify.design/fluent-emoji:people-hugging.svg" class="h-full object-contain drop-shadow" alt="empty">
+            <div class="flex flex-col items-center justify-center py-24 gap-4 h-full">
+                <div class="w-16 h-16 rounded-full bg-[#f0f5ff] flex items-center justify-center text-[#2b6be6] mb-2">
+                    <i class="fa-solid fa-users text-3xl"></i>
                 </div>
-                <div>
+                <div class="text-center">
                     <h3 class="font-bold text-[#1e293b] text-base mb-1">Zatím zde nejsou žádné týmy</h3>
                     <p class="text-sm text-slate-500">Přidejte první tým pomocí horního formuláře.</p>
                 </div>
@@ -46,20 +46,23 @@ function renderDepartmentsList() {
 
     const html = departmentsList.map(d => {
         return `
-            <div class="bg-[#f8f9fa] rounded-xl p-4 flex items-center shadow-sm border border-slate-200/60 mb-3 justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                        <i data-lucide="users-2" class="w-4 h-4 text-blue-700"></i>
+            <div class="list-item">
+                <div class="grid grid-cols-[3fr_2fr_180px] gap-6 w-full items-center text-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <span class="font-medium text-[#1f2937] truncate">${d.name}</span>
                     </div>
-                    <span class="font-bold text-[#1e293b]">${d.name} <span class="text-slate-500 text-xs font-normal ml-2">(${d.people} členů)</span></span>
-                </div>
-                <div class="flex justify-end gap-3 w-48">
-                    <button onclick="openDeptSettings(${d.id})" class="bg-[#2b6be6] hover:bg-blue-700 text-white px-5 py-1.5 rounded-full text-xs font-bold transition-colors shadow-sm">
-                        Upravit
-                    </button>
-                    <button onclick="deleteDept(${d.id})" class="bg-red-500 hover:bg-red-600 text-white px-5 py-1.5 rounded-full text-xs font-bold transition-colors shadow-sm">
-                        Smazat
-                    </button>
+                    <div class="text-center"><span class="font-medium text-slate-700">${d.people}</span></div>
+                    <div class="flex justify-end gap-3">
+                        <button onclick="openDeptSettings(${d.id})" class="btn btn-primary btn-sm">
+                            Upravit
+                        </button>
+                        <button onclick="deleteDept(${d.id})" class="btn btn-danger btn-sm">
+                            Smazat
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -119,14 +122,10 @@ async function openDeptSettings(id) {
             return `<option value="${p.id}" ${isSelected}>${p.name}</option>`;
         }).join('');
 
-    // Prepare add person datalist
     await fetchAllPersons();
-    const dataList = document.getElementById('persons-datalist');
-    // Filtr: jen ti lidi co nejsou zarazeni nikam
-    const unassignedPersons = availablePersonsList.filter(p => !p.department);
-    dataList.innerHTML = unassignedPersons.map(p =>
-        `<option value="${p.firstName} ${p.surname}" data-id="${p.id}">`
-    ).join('');
+
+    // Render initial modal unassigned list
+    renderUnassignedPersonsModal('');
 
     // Pre-filter current members
     currentDeptMembers = availablePersonsList.filter(p => p.department && p.department.id === d.id);
@@ -138,8 +137,27 @@ async function openDeptSettings(id) {
 function closeDeptModal() {
     editingDepartment = null;
     currentDeptMembers = [];
-    document.getElementById('search-person-add').value = '';
     document.getElementById('modal-department-settings').classList.add('hidden');
+}
+
+async function openAddPersonToDeptModal() {
+    selectedPersonIdToAdd = null;
+    document.getElementById('btn-confirm-add-person').disabled = true;
+    
+    await fetchAllPersons();
+
+    document.getElementById('modal-add-person-to-dept').classList.remove('hidden');
+    renderUnassignedPersonsModal(''); // Reset list
+    setTimeout(() => {
+        const input = document.getElementById('search-person-add-modal');
+        input.value = '';
+        input.focus();
+    }, 50);
+}
+
+function closeAddPersonToDeptModal() {
+    document.getElementById('search-person-add-modal').value = '';
+    document.getElementById('modal-add-person-to-dept').classList.add('hidden');
 }
 
 function renderDeptMembers() {
@@ -160,41 +178,65 @@ function renderDeptMembers() {
     }
 }
 
-async function addPersonToDept() {
-    if (!editingDepartment) return;
+let selectedPersonIdToAdd = null;
 
-    const searchInput = document.getElementById('search-person-add');
-    const val = searchInput.value.trim().toLowerCase();
+function renderUnassignedPersonsModal(filterText = '') {
+    const container = document.getElementById('modal-unassigned-persons-list');
+    if (!container) return;
 
-    if (!val) return;
+    const unassigned = availablePersonsList.filter(p => !p.department || p.department === "" || p.department === "null");
+    const filtered = unassigned.filter(p => {
+        const fullName = `${p.firstName} ${p.surname}`.toLowerCase();
+        return fullName.includes(filterText.toLowerCase());
+    });
 
-    // Find the person object from the list
-    const p = availablePersonsList.find(x => `${x.firstName} ${x.surname}`.toLowerCase() === val);
-    if (!p) {
-        alert("Zaměstnanec s tímto jménem nenalezen. Musíte vybrat existujícího.");
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-sm text-slate-500 font-medium">Nenalezeni žádní volní zaměstnanci.</div>`;
         return;
     }
 
-    if (currentDeptMembers.find(x => x.id === p.id)) {
-        alert("Zaměstnanec je již členem tohoto týmu.");
-        return;
-    }
+    container.innerHTML = filtered.map(p => {
+        const isSelected = selectedPersonIdToAdd === p.id;
+        return `
+            <div onclick="selectPersonForAdd(${p.id})" class="px-4 py-3 rounded-lg flex items-center gap-3 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-transparent hover:bg-slate-100'}">
+                <div class="w-8 h-8 rounded-full ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center shrink-0 transition-colors">
+                    <i class="fa-solid fa-user text-xs"></i>
+                </div>
+                <span class="text-sm font-medium ${isSelected ? 'text-blue-900' : 'text-slate-700'}">${p.firstName} ${p.surname}</span>
+            </div>
+        `;
+    }).join('');
+}
 
-    if (p.department && p.department.id !== editingDepartment.id) {
-        alert(`Tento zaměstnanec je již zařazen v oddělení "${p.department.name}". Zaměstnanec může být pouze v jednom týmu současně. Nejdříve ho z něj musíte odebrat.`);
-        return;
+function selectPersonForAdd(personId) {
+    // Toggle selection
+    if (selectedPersonIdToAdd === personId) {
+        selectedPersonIdToAdd = null;
+    } else {
+        selectedPersonIdToAdd = personId;
     }
+    document.getElementById('search-person-add-modal').value = ''; // clears filter to see choice
+    renderUnassignedPersonsModal();
+    document.getElementById('btn-confirm-add-person').disabled = (selectedPersonIdToAdd === null);
+}
+
+function filterAddPersonModal(text) {
+    if(!selectedPersonIdToAdd) {
+        renderUnassignedPersonsModal(text);
+    }
+}
+
+async function confirmAddPersonToDept() {
+    if (!editingDepartment || !selectedPersonIdToAdd) return;
 
     try {
-        // Send updates directly via PUT /persons/:id/department
-        await fetch(`${API_BASE}/persons/${p.id}/department`, {
+        await fetch(`${API_BASE}/persons/${selectedPersonIdToAdd}/department`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ departmentId: editingDepartment.id })
         });
 
         // Refresh local array
-        searchInput.value = '';
         await fetchAllPersons();
         currentDeptMembers = availablePersonsList.filter(x => x.department && x.department.id === editingDepartment.id);
         renderDeptMembers();
@@ -202,6 +244,8 @@ async function addPersonToDept() {
         // In background refresh departments table info (like member count)
         await fetchDepartments();
         renderDepartmentsList();
+        
+        closeAddPersonToDeptModal();
 
     } catch (e) { console.error(e); }
 }
@@ -311,7 +355,11 @@ window.renderDepartmentsList = renderDepartmentsList;
 window.createDepartment = createDepartment;
 window.openDeptSettings = openDeptSettings;
 window.closeDeptModal = closeDeptModal;
-window.addPersonToDept = addPersonToDept;
+window.openAddPersonToDeptModal = openAddPersonToDeptModal;
+window.closeAddPersonToDeptModal = closeAddPersonToDeptModal;
+window.filterAddPersonModal = filterAddPersonModal;
+window.selectPersonForAdd = selectPersonForAdd;
+window.confirmAddPersonToDept = confirmAddPersonToDept;
 window.removePersonFromDeptLocal = removePersonFromDeptLocal;
 window.saveDepartmentSettings = saveDepartmentSettings;
 window.deleteDept = deleteDept;

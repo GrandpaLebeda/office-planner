@@ -51,11 +51,13 @@ async function renderBuildingsList() {
 
     if (buildingsList.length === 0) {
         container.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-20 gap-4 opacity-60">
-                <img src="https://api.iconify.design/flat-color-icons:department.svg" class="w-20" alt="empty">
+            <div class="flex flex-col items-center justify-center py-24 gap-4 h-full">
+                <div class="w-16 h-16 rounded-full bg-[#f0f5ff] flex items-center justify-center text-[#2b6be6] mb-2">
+                    <i class="fa-solid fa-city text-3xl"></i>
+                </div>
                 <div class="text-center">
-                    <p class="font-bold">Zatím zde nejsou žádné budovy</p>
-                    <p class="text-xs">Přidejte první budovu pomocí horního formuláře.</p>
+                    <h3 class="font-bold text-[#1e293b] text-base mb-1">Zatím zde nejsou žádné budovy</h3>
+                    <p class="text-sm text-slate-500">Přidejte první budovu pomocí horního formuláře.</p>
                 </div>
             </div>
         `;
@@ -64,10 +66,10 @@ async function renderBuildingsList() {
 
     // Potřebujeme načíst kapacity pro zobrazení
     container.innerHTML = `
-        <div class="grid grid-cols-[1fr,150px,150px,200px] gap-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+        <div class="grid grid-cols-[3fr_2fr_2fr_180px] gap-6 px-10 text-[15px] font-bold text-[#1f2937] mb-4 items-center">
             <span>Název</span>
-            <span class="text-center">Počet pater</span>
-            <span class="text-center">Kapacita</span>
+            <span>Počet pater</span>
+            <span>Kapacita</span>
             <span></span>
         </div>
     `;
@@ -88,17 +90,21 @@ async function renderBuildingsList() {
         }
 
         const row = document.createElement('div');
-        row.className = 'bg-[#f8f9fa] rounded-xl p-4 flex items-center justify-between hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-100';
+        row.className = 'list-item';
         row.innerHTML = `
-            <div class="flex items-center gap-4 flex-1">
-                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white"><i data-lucide="building-2" size="20"></i></div>
-                <span class="font-bold text-lg">${b.name}</span>
-            </div>
-            <div class="w-[150px] text-center font-bold text-slate-700">${floorCount}</div>
-            <div class="w-[150px] text-center font-bold text-slate-700">${totalCap}</div>
-            <div class="w-[200px] flex justify-end gap-3">
-                <button onclick="openSettings(${b.id})" class="bg-[#2b6be6] text-white px-5 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors">Upravit</button>
-                <button onclick="deleteBuilding(${b.id})" class="bg-[#ff4d4d] text-white px-5 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-red-600 transition-colors">Smazat</button>
+            <div class="grid grid-cols-[3fr_2fr_2fr_180px] gap-6 w-full items-center text-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                        <i class="fa-solid fa-city"></i>
+                    </div>
+                    <span class="font-medium text-[#1f2937] truncate">${b.name}</span>
+                </div>
+                <div><span class="font-medium text-slate-700">${floorCount}</span></div>
+                <div><span class="font-medium text-slate-700">${totalCap}</span></div>
+                <div class="flex justify-end gap-3">
+                    <button onclick="openSettings(${b.id})" class="btn btn-primary btn-sm">Upravit</button>
+                    <button onclick="deleteBuilding(${b.id})" class="btn btn-danger btn-sm">Smazat</button>
+                </div>
             </div>
         `;
         container.appendChild(row);
@@ -120,10 +126,10 @@ async function openSettings(id) {
     const list = document.getElementById('modal-floors-list');
     list.innerHTML = floors.map(f => `
         <div class="flex items-center gap-4 mb-2">
-            <span class="text-sm font-bold w-1/3">${f.level}. patro</span>
+            <span class="text-sm font-bold w-1/3 text-[#1e293b]">${f.level}. patro</span>
             <div class="flex-1 flex items-center gap-2">
-                <input type="number" value="${f.capacity}" data-floor-id="${f.id}" class="floor-cap-input w-full border border-slate-200 rounded-lg px-3 py-1.5 bg-white outline-none focus:border-blue-500">
-                ${f.level === maxLevel ? `<button onclick="removeFloor(${b.id}, ${f.id}, ${f.level})" class="text-red-500 hover:text-red-700 font-bold px-2 py-1 text-lg mb-1" title="Smazat patro">×</button>` : '<div class="w-8"></div>'}
+                <input type="number" value="${f.capacity}" data-floor-id="${f.id}" class="floor-cap-input w-full border border-slate-200 rounded-lg px-3 py-1.5 bg-white outline-none focus:border-blue-500 font-medium">
+                ${f.level === maxLevel ? `<button onclick="removeFloor(${b.id}, ${f.id}, ${f.level})" class="text-red-500 hover:text-red-700 w-8 h-8 flex items-center justify-center shrink-0" title="Smazat patro"><i class="fa-solid fa-xmark text-lg"></i></button>` : '<div class="w-8 shrink-0"></div>'}
             </div>
         </div>
     `).join('');

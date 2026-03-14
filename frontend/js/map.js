@@ -97,8 +97,8 @@ function renderMap(data) {
     if (data.unassignedDepartments.length === 0) {
         unList.innerHTML = `
             <div class="flex flex-col items-center justify-center py-20 gap-4">
-                <div class="h-20 w-20 flex items-center justify-center">
-                    <img src="https://api.iconify.design/fluent-emoji:check-mark-button.svg" class="h-full object-contain" alt="vše hotovo">
+                <div class="h-16 w-16 mb-2 rounded-full bg-[#f0fdf4] flex items-center justify-center text-[#22c55e] mx-auto">
+                    <i class="fa-solid fa-check text-3xl"></i>
                 </div>
                 <p class="text-sm font-medium text-slate-500">Všechny týmy jsou usazené</p>
             </div>
@@ -114,13 +114,13 @@ function renderMap(data) {
                     ${dept.collaboratesWith ? `
                         <div class="flex items-center gap-1.5">
                             <span class="text-[10px] text-red-400 font-bold">${dept.collaboratesWith.name}</span>
-                            <i data-lucide="heart" class="w-3 h-3 text-red-500 fill-red-500"></i>
+                            <i class="fa-solid fa-heart text-red-500 text-[10px]"></i>
                         </div>
                     ` : ''}
                 </div>
                 <div class="flex items-center gap-1 text-blue-600 font-bold">
                     <span class="text-sm">${dept.size}</span>
-                    <i data-lucide="user" class="w-4 h-4"></i>
+                    <i class="fa-solid fa-user text-xs"></i>
                 </div>
             `;
             el.ondragstart = (e) => e.dataTransfer.setData('deptId', dept.id);

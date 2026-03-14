@@ -1,65 +1,58 @@
-<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 max-w-6xl mx-auto">
-    <div class="flex gap-4 mb-10">
-        <div class="flex-1 flex flex-col gap-1">
-            <label class="text-xs font-bold text-slate-500 ml-1">Název</label>
-            <input type="text" id="new-b-name"
-                class="border border-slate-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div class="w-64 flex flex-col gap-1">
-            <label class="text-xs font-bold text-slate-500 ml-1">Počet pater</label>
-            <input type="number" id="new-b-floors"
-                class="border border-slate-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div class="flex items-end">
-            <button onclick="createBuilding()"
-                class="bg-[#2b6be6] hover:bg-blue-700 text-white px-8 py-2 rounded-full text-sm font-bold shadow-md transition-all">Přidat
-                budovu</button>
+<div class="page-container pt-12">
+    
+    <!-- Top actions row -->
+    <div class="flex flex-col lg:flex-row gap-6 mb-8 justify-between items-end w-full">
+        <!-- Add Building Form -->
+        <div class="flex flex-wrap items-center gap-4 bg-transparent w-full lg:w-auto">
+            <div class="flex items-center gap-3">
+                <span class="form-label mb-0">Název</span>
+                <input type="text" id="new-b-name" class="form-input w-64">
+            </div>
+            <div class="flex items-center gap-3 w-48">
+                <span class="form-label mb-0 whitespace-nowrap">Počet pater</span>
+                <input type="number" id="new-b-floors" class="form-input">
+            </div>
+            <button onclick="createBuilding()" class="btn btn-primary px-8">Přidat budovu</button>
         </div>
     </div>
 
-    <h3 class="font-bold text-xl mb-6">Seznam budov</h3>
-    <div id="buildings-table" class="space-y-4">
-        <!-- Dynamický obsah -->
+    <!-- Main List Container -->
+    <div class="panel content-panel">
+        <h2 class="panel-title mb-8 mt-1">Seznam budov</h2>
+        
+        <div id="buildings-table" class="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-8">
+            <!-- Dynamický obsah -->
+        </div>
     </div>
 </div>
 
 <!-- MODAL: BUILDING SETTINGS -->
-<div id="modal-building-settings"
-    class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
-    <div
-        class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div class="flex justify-between items-center px-8 py-6 border-b border-slate-100">
-            <h3 class="text-xl font-bold text-[#1e293b]">Nastavení budovy</h3>
-            <button onclick="closeModal()" class="text-blue-600 font-bold text-sm hover:underline">Zavřít ×</button>
+<div id="modal-building-settings" class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div class="modal-content max-w-2xl animate-in fade-in zoom-in duration-200">
+        <div class="modal-header">
+            <h3>Nastavení budovy</h3>
+            <button onclick="closeModal()" class="modal-close">Zavřít &times;</button>
         </div>
         <div class="p-8">
             <div class="mb-8">
-                <label class="text-xs font-bold text-slate-500 mb-2 block">Název budovy</label>
-                <input type="text" id="edit-b-name"
-                    class="w-full border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50">
+                <label class="form-label">Název budovy</label>
+                <input type="text" id="edit-b-name" class="form-input">
             </div>
 
-            <div class="flex gap-8 items-start">
-                <div class="w-32 py-4">
-                    <img src="https://api.iconify.design/logos:google-cloud.svg" class="w-full grayscale opacity-20"
-                        alt="b-icon">
-                </div>
-                <div class="flex-1">
-                    <div class="flex items-center gap-4 mb-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <div class="flex flex-col items-start w-full">
+                <div class="w-full">
+                    <div class="flex items-center gap-4 mb-4 form-label uppercase tracking-wider text-xs">
                         <span class="w-1/3">Patra</span>
                         <span class="flex-1">Kapacita</span>
                     </div>
-                    <div id="modal-floors-list" class="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                    <div id="modal-floors-list" class="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                         <!-- Dynamický obsah -->
                     </div>
-                    <button onclick="addFloorToEdit()"
-                        class="mt-6 bg-[#2b6be6] text-white px-6 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-blue-700">Přidat
-                        patro</button>
+                    <button onclick="addFloorToEdit()" class="btn btn-primary mt-6">Přidat patro</button>
                 </div>
             </div>
             <div class="mt-12 flex justify-center">
-                <button onclick="saveBuildingSettings()"
-                    class="bg-[#2b6be6] text-white px-16 py-3 rounded-full font-bold shadow-lg hover:bg-blue-700 transition-all">Uložit</button>
+                <button onclick="saveBuildingSettings()" class="btn btn-primary px-16">Uložit</button>
             </div>
         </div>
     </div>
@@ -67,16 +60,14 @@
 
 <!-- MODAL: DELETE CONFIRMATION -->
 <div id="modal-delete-confirm" class="modal-overlay hidden fixed inset-0 z-[110] flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div class="modal-content max-w-sm animate-in fade-in zoom-in duration-200">
         <div class="p-8 text-center flex flex-col items-center gap-4">
-            <h3 class="text-xl font-bold text-[#1e293b]">Opravdu chcete smazat tuto budovu?</h3>
-            <p class="text-sm text-slate-600 mb-6">Tato akce je nevratná.</p>
+            <h3 class="text-xl font-bold text-[#1e293b] m-0">Opravdu chcete smazat tuto budovu?</h3>
+            <p class="text-sm text-slate-600 mb-6 m-0">Tato akce je nevratná.</p>
 
             <div class="flex gap-4 w-full border-t border-slate-100 pt-6 justify-center">
-                <button onclick="closeDeleteModal()"
-                    class="px-6 py-2 rounded-full text-sm font-bold text-blue-600 border border-blue-200 hover:bg-blue-50 transition-all">Zrušit</button>
-                <button onclick="confirmDeleteBuilding()"
-                    class="bg-[#ff4d4d] hover:bg-red-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-md transition-all">Smazat</button>
+                <button onclick="closeDeleteModal()" class="btn btn-secondary">Zrušit</button>
+                <button onclick="confirmDeleteBuilding()" class="btn btn-danger">Smazat</button>
             </div>
         </div>
     </div>

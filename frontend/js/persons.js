@@ -25,29 +25,39 @@ function renderPersonsList(filterText = '') {
     );
 
     if (filtered.length === 0) {
-        listContainer.innerHTML = `<div class="text-center py-20 text-slate-500 font-medium">Nebyli nalezeni žádní zaměstnanci.</div>`;
+        listContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-24 gap-4 h-full">
+                <div class="w-16 h-16 rounded-full bg-[#f0f5ff] flex items-center justify-center text-[#2b6be6] mb-2">
+                    <i class="fa-solid fa-user-plus text-3xl"></i>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-[#1e293b] text-base mb-1">${filterText ? 'Žádné výsledky hledání' : 'Zatím zde nejsou žádní zaměstnanci'}</h3>
+                    <p class="text-sm text-slate-500">${filterText ? 'Zkuste změnit hledaný výraz' : 'Přidejte prvního zaměstnance pomocí horního formuláře.'}</p>
+                </div>
+            </div>
+        `;
         return;
     }
 
     const html = filtered.map(p => {
         const teamHtml = p.department 
             ? `<span class="text-[#1f2937]">${p.department.name}</span>`
-            : `<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Nepřiřazen</span>`;
+            : `<span class="badge badge-danger">Nepřiřazen</span>`;
             
         const buildingHtml = p.building
             ? `<span class="text-[#1f2937]">${p.building.name}</span>`
-            : `<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Neusazen</span>`;
+            : `<span class="badge badge-danger">Neusazen</span>`;
             
         const floorHtml = p.floor
             ? `<span class="text-[#1f2937]">${p.floor.level}. patro</span>`
-            : `<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Neusazen</span>`;
+            : `<span class="badge badge-danger">Neusazen</span>`;
 
         return `
-            <div class="bg-white rounded-xl p-4 flex items-center shadow-sm border border-slate-100 mb-3 hover:shadow-md transition-shadow">
+            <div class="list-item">
                 <div class="grid grid-cols-[3fr_2fr_2fr_2fr_120px] gap-6 w-full items-center text-sm">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                            <i data-lucide="user" class="w-4 h-4"></i>
+                            <i class="fa-solid fa-user"></i>
                         </div>
                         <span class="font-medium text-[#1f2937] truncate">${p.firstName} ${p.surname}</span>
                     </div>
@@ -55,7 +65,7 @@ function renderPersonsList(filterText = '') {
                     <div>${buildingHtml}</div>
                     <div>${floorHtml}</div>
                     <div class="flex justify-end">
-                        <button onclick="deletePerson(${p.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full text-xs font-bold transition-colors shadow-sm whitespace-nowrap">
+                        <button onclick="deletePerson(${p.id})" class="btn btn-danger btn-sm">
                             Smazat zaměstnance
                         </button>
                     </div>
