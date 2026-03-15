@@ -174,12 +174,17 @@ async function removeFromFloor(deptId) {
 
 async function runAutoAllocation() {
     try {
-        await fetch(`${API_BASE}/assignments/run`, { method: 'POST' });
+        const res = await fetch(`${API_BASE}/assignments/run`, { method: 'POST' });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            showToast(err.error || `Chyba při alokaci (${res.status})`, "error");
+            return;
+        }
         await fetchMap();
         showToast("Automatické usazení dokončeno", "success");
     } catch (err) {
-        console.error(err);
-        showToast("Chyba při automatickém usazení", "error");
+        console.error('runAutoAllocation error:', err);
+        showToast("Nepodařilo se připojit k serveru.", "error");
     }
 }
 

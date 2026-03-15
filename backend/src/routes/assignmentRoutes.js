@@ -78,6 +78,18 @@ router.post("/run", async (req, res) => {
       partnerId: toNum(r.get("partnerId"))
     }));
 
+    // VALIDACE: Zamezit spuštění alokace na nesmyslných datech
+    if (departments.length === 0) {
+      return res.status(400).json({ error: "Žádná oddělení k alokaci." });
+    }
+    if (floors.length === 0) {
+      return res.status(400).json({ error: "Žádná dostupná patra k alokaci." });
+    }
+    const totalCapacity = floors.reduce((sum, f) => sum + f.capacity, 0);
+    if (totalCapacity === 0) {
+      return res.status(400).json({ error: "Celková kapacita všech dostupných pater je 0." });
+    }
+
     // 5) ILP solver
     const { assignments, failed, collaborationScore, totalCollabPairs } = solveAllocation({
       departments,

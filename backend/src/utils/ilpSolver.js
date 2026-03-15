@@ -175,6 +175,53 @@ function solveAllocation({ departments, floors, lockedPlacements, collaborations
     }
   }
 
+  // ---- (C6) Přísný limit na maximální vzdálenost 1 patra pro spolupracující oddělení ----
+  for (const pair of collabPairs) {
+    for (let j = 0; j < floors.length; j++) {
+      for (let m = j + 1; m < floors.length; m++) {
+        const fj = floors[j];
+        const fm = floors[m];
+        
+        // Pokud jsou patra moc daleko (jiná budova, nebo rozdíl podlaží > 1)
+        if (fj.buildingName !== fm.buildingName || Math.abs(fj.level - fm.level) > 1) {
+          
+          // Zákaz A(na fj) a B(na fm) současně
+          const c1 = `dist_${pair.a}_${pair.b}_${fj.id}_${fm.id}_1`;
+          model.constraints[c1] = { max: 1 };
+          if (!model.variables[xName(pair.a, fj.id)]) model.variables[xName(pair.a, fj.id)] = {};
+          if (!model.variables[xName(pair.b, fm.id)]) model.variables[xName(pair.b, fm.id)] = {};
+          model.variables[xName(pair.a, fj.id)][c1] = 1;
+          model.variables[xName(pair.b, fm.id)][c1] = 1;
+
+          // Zákaz A(na fm) a B(na fj) současně
+          const c2 = `dist_${pair.a}_${pair.b}_${fj.id}_${fm.id}_2`;
+          model.constraints[c2] = { max: 1 };
+          if (!model.variables[xName(pair.a, fm.id)]) model.variables[xName(pair.a, fm.id)] = {};
+          if (!model.variables[xName(pair.b, fj.id)]) model.variables[xName(pair.b, fj.id)] = {};
+          model.variables[xName(pair.a, fm.id)][c2] = 1;
+          model.variables[xName(pair.b, fj.id)][c2] = 1;
+        }
+      }
+    }
+  }
+
+  // Aplikování téhož na semi-locked páry (jedno oddělení je již zamknuté na konkrétním patře)
+  for (const semi of semiLockedCollabs) {
+    const lockedFloor = floors.find(f => f.id === semi.floorId);
+    if (!lockedFloor) continue;
+    
+    for (const f of floors) {
+      // Zakázat přidělení volného oddělení na patro vzdálené víc než 1 stupeň od zamknutého
+      if (f.buildingName !== lockedFloor.buildingName || Math.abs(f.level - lockedFloor.level) > 1) {
+         const name = xName(semi.freeDeptId, f.id);
+         if (!model.variables[name]) model.variables[name] = {};
+         const cForbid = `forbid_${semi.freeDeptId}_${f.id}`;
+         model.constraints[cForbid] = { max: 0 };
+         model.variables[name][cForbid] = 1;
+      }
+    }
+  }
+
   // ---- Řešení ----
   const result = solver.Solve(model);
 
