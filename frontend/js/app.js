@@ -62,5 +62,44 @@ async function switchView(view) {
     
     lucide.createIcons();
 }
-
 window.onload = init;
+
+// Global Toast Notification function
+window.showToast = function(message, type = 'success') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    // Icon based on type
+    const iconClass = type === 'success' ? 'fa-solid fa-check' : 'fa-solid fa-xmark';
+    const titleText = type === 'success' ? 'Úspěch' : 'Chyba';
+
+    toast.innerHTML = `
+        <div class="toast-icon">
+            <i class="${iconClass}"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">${titleText}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.add('toast-hiding');
+        toast.addEventListener('animationend', () => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        });
+    }, 3000);
+};

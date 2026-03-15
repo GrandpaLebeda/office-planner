@@ -93,7 +93,7 @@ async function createPerson() {
     const surname = surnameInput.value.trim();
 
     if (!firstName || !surname) {
-        alert("Vyplňte prosím jméno i příjmení.");
+        showToast("Vyplňte prosím jméno i příjmení.", "error");
         return;
     }
 
@@ -109,13 +109,14 @@ async function createPerson() {
             surnameInput.value = '';
             await fetchPersons();
             renderPersonsList();
+            showToast("Zaměstnanec úspěšně přidán", "success");
         } else {
             const err = await response.json();
-            alert(err.error || "Při přidávání zaměstnance nastala chyba.");
+            showToast(err.error || "Při přidávání zaměstnance nastala chyba.", "error");
         }
     } catch (error) {
         console.error("Chyba spojení:", error);
-        alert("Při přidávání zaměstnance nastala chyba spojení.");
+        showToast("Při přidávání zaměstnance nastala chyba spojení.", "error");
     }
 }
 
@@ -136,15 +137,16 @@ async function confirmDeletePerson() {
     try {
         const response = await fetch(`${API_BASE}/persons/${personToDelete}`, { method: 'DELETE' });
         if (response.ok) {
+            showToast("Zaměstnanec smazán", "success");
             await fetchPersons();
             filterPersons(); // Re-apply existing filter
         } else {
             const err = await response.json();
-            alert(err.error || "Chyba při mazání.");
+            showToast(err.error || "Chyba při mazání.", "error");
         }
     } catch (error) {
         console.error(error);
-        alert("Chyba spojení.");
+        showToast("Chyba spojení.", "error");
     }
     closePersonDeleteModal();
 }

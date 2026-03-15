@@ -145,9 +145,12 @@ async function handleDrop(e, floorId) {
         if (res.ok) await fetchMap();
         else {
             const err = await res.json();
-            alert(err.error || "Chyba při přesunu");
+            showToast(err.error || "Chyba při přesunu", "error");
         }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+        console.error(err);
+        showToast("Chyba při komunikaci", "error");
+    }
 }
 
 async function removeFromFloor(deptId) {
@@ -155,17 +158,29 @@ async function removeFromFloor(deptId) {
         const res = await fetch(`${API_BASE}/assignments/${deptId}/placement`, {
             method: 'DELETE'
         });
-        if (res.ok) await fetchMap();
+        if (res.ok) {
+            await fetchMap();
+            showToast("Tým odebrán z patra", "success");
+        }
         else {
             const err = await res.json();
-            alert(err.error || "Chyba při odebírání týmu");
+            showToast(err.error || "Chyba při odebírání týmu", "error");
         }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+        console.error(err);
+        showToast("Chyba při komunikaci", "error");
+    }
 }
 
 async function runAutoAllocation() {
-    await fetch(`${API_BASE}/assignments/run`, { method: 'POST' });
-    await fetchMap();
+    try {
+        await fetch(`${API_BASE}/assignments/run`, { method: 'POST' });
+        await fetchMap();
+        showToast("Automatické usazení dokončeno", "success");
+    } catch (err) {
+        console.error(err);
+        showToast("Chyba při automatickém usazení", "error");
+    }
 }
 
 async function clearMap() {
@@ -173,13 +188,14 @@ async function clearMap() {
         const res = await fetch(`${API_BASE}/assignments/clear`, { method: 'POST' });
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            alert(err.error || `Chyba serveru (${res.status})`);
+            showToast(err.error || `Chyba serveru (${res.status})`, "error");
             return;
         }
         await fetchMap();
+        showToast("Mapa byla vyčištěna", "success");
     } catch (err) {
         console.error('clearMap error:', err);
-        alert('Nepodařilo se připojit k serveru.');
+        showToast('Nepodařilo se připojit k serveru.', "error");
     }
 }
 

@@ -77,7 +77,7 @@ async function createDepartment() {
     const name = nameInput.value.trim();
 
     if (!name || name.length < 2) {
-        alert("Název týmu musí mít alespoň 2 znaky.");
+        showToast("Název týmu musí mít alespoň 2 znaky.", "error");
         return;
     }
 
@@ -89,16 +89,17 @@ async function createDepartment() {
         });
 
         if (response.ok) {
+            showToast("Tým úspěšně vytvořen", "success");
             nameInput.value = '';
             await fetchDepartments();
             renderDepartmentsList();
         } else {
             const err = await response.json();
-            alert(err.error || "Při přidávání týmu nastala chyba.");
+            showToast(err.error || "Při přidávání týmu nastala chyba.", "error");
         }
     } catch (error) {
         console.error("Chyba spojení:", error);
-        alert("Chyba spojení s API.");
+        showToast("Chyba spojení s API.", "error");
     }
 }
 
@@ -229,6 +230,22 @@ function filterAddPersonModal(text) {
 async function confirmAddPersonToDept() {
     if (!editingDepartment || !selectedPersonIdToAdd) return;
 
+    const p = availablePersonsList.find(x => x.id === selectedPersonIdToAdd);
+    if (!p) {
+        showToast("Vybraný zaměstnanec nebyl nalezen.", "error");
+        return;
+    }
+
+    if (currentDeptMembers.find(x => x.id === p.id)) {
+        showToast("Zaměstnanec je již členem tohoto týmu.", "error");
+        return;
+    }
+
+    if (p.department && p.department.id !== editingDepartment.id) {
+        showToast(`Zaměstnanec je již zařazen do týmu ${p.department.name}. Nejdříve ho z něj odeberte.`, "error");
+        return;
+    }
+
     try {
         await fetch(`${API_BASE}/persons/${selectedPersonIdToAdd}/department`, {
             method: 'PUT',
@@ -245,9 +262,13 @@ async function confirmAddPersonToDept() {
         await fetchDepartments();
         renderDepartmentsList();
         
+        showToast("Zaměstnanec přidán do týmu", "success");
         closeAddPersonToDeptModal();
 
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        console.error(e);
+        showToast("Chyba při přidávání zaměstnance", "error");
+    }
 }
 
 async function removePersonFromDeptLocal(personId) {
@@ -267,8 +288,12 @@ async function removePersonFromDeptLocal(personId) {
 
         await fetchDepartments();
         renderDepartmentsList();
+        showToast("Zaměstnanec odebárn z týmu", "success");
 
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        console.error(e);
+        showToast("Chyba při odebírání zaměstnance", "error");
+    }
 }
 
 async function saveDepartmentSettings() {
@@ -303,10 +328,12 @@ async function saveDepartmentSettings() {
 
 
         closeDeptModal();
+        showToast("Nastavení týmu bylo uloženo", "success");
         await fetchDepartments();
         renderDepartmentsList();
     } catch (err) {
         console.error(err);
+        showToast("Chyba při ukládání nastavení", "error");
     }
 }
 
@@ -331,15 +358,16 @@ async function confirmDeleteDept() {
     try {
         const response = await fetch(`${API_BASE}/departments/${deptToDelete}`, { method: 'DELETE' });
         if (response.ok) {
+            showToast("Tým byl úspěšně smazán", "success");
             await fetchDepartments();
             renderDepartmentsList();
         } else {
             const err = await response.json();
-            alert(err.error || "Chyba při mazání.");
+            showToast(err.error || "Chyba při mazání.", "error");
         }
     } catch (error) {
         console.error(error);
-        alert("Chyba spojení.");
+        showToast("Chyba spojení.", "error");
     }
     closeDeptDeleteModal();
 }

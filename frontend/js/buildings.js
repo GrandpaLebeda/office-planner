@@ -19,7 +19,10 @@ async function fetchBuildings() {
 async function createBuilding() {
     const name = document.getElementById('new-b-name').value;
     const floors = parseInt(document.getElementById('new-b-floors').value);
-    if (!name || isNaN(floors) || floors < 1) return alert("Vyplňte název a platný počet pater");
+    if (!name || isNaN(floors) || floors < 1) {
+        showToast("Vyplňte prosím název a platný počet pater.", "error");
+        return;
+    }
 
     try {
         const res = await fetch(`${API_BASE}/buildings`, {
@@ -41,8 +44,15 @@ async function createBuilding() {
             document.getElementById('new-b-floors').value = '';
             await fetchBuildings();
             await renderBuildingsList();
+            showToast("Budova byla úspěšně vytvořena.", "success");
+        } else {
+            const err = await res.json();
+            showToast(err.error || "Při vytváření budovy nastala chyba.", "error");
         }
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+        console.error(err); 
+        showToast("Chyba při komunikaci se serverem.", "error");
+    }
 }
 
 async function renderBuildingsList() {
@@ -156,10 +166,13 @@ async function confirmDeleteBuilding() {
         const res = await fetch(`${API_BASE}/buildings/${buildingToDelete}`, { method: 'DELETE' });
         if (!res.ok) {
             const err = await res.json();
-            throw new Error(err.error || "Chyba při mazání budovy.");
+            showToast(err.error || "Chyba při mazání budovy.", "error");
+            return;
         }
+        showToast("Budova byla smazána.", "success");
     } catch (err) {
-        alert(err.message);
+        showToast("Chyba při komunikaci se serverem.", "error");
+        console.error(err);
     } finally {
         closeDeleteModal();
         await fetchBuildings();
@@ -198,6 +211,7 @@ async function saveBuildingSettings() {
         }
     }
     closeModal();
+    showToast("Nastavení budovy bylo uloženo.", "success");
     await fetchBuildings();
     await renderBuildingsList();
 }
@@ -220,13 +234,14 @@ async function addFloorToEdit() {
             await openSettings(editingBuilding.id);
             await fetchBuildings();
             await renderBuildingsList();
+            showToast("Nové patro bylo úspěšně přidáno.", "success");
         } else {
             const err = await res.json();
-            alert(err.error || "Při přidávání patra nastala chyba.");
+            showToast(err.error || "Při přidávání patra nastala chyba.", "error");
         }
     } catch(err) {
         console.error(err);
-        alert("Při přidávání patra nastala chyba spojení.");
+        showToast("Při přidávání patra nastala chyba spojení.", "error");
     }
 }
 
@@ -236,8 +251,10 @@ async function removeFloor(buildingId, floorId, level) {
         await openSettings(buildingId); // Refresh modal view
         await fetchBuildings();
         await renderBuildingsList();
+        showToast("Patro bylo úspěšně odebráno.", "success");
     } catch(err) {
         console.error(err);
+        showToast("Při mazání patra došlo k chybě.", "error");
     }
 }
 
