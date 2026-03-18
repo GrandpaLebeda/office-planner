@@ -47,7 +47,7 @@ function renderDepartmentsList() {
     const html = departmentsList.map(d => {
         return `
             <div class="list-item">
-                <div class="grid grid-cols-[3fr_2fr_180px] gap-6 w-full items-center text-sm">
+                <div class="list-row-departments">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
                             <i class="fa-solid fa-users"></i>
@@ -69,7 +69,6 @@ function renderDepartmentsList() {
     }).join('');
 
     listContainer.innerHTML = html;
-    lucide.createIcons();
 }
 
 async function createDepartment() {
@@ -103,9 +102,6 @@ async function createDepartment() {
     }
 }
 
-// -----------------------------------------------------
-// Edit Modal Logic
-// -----------------------------------------------------
 
 async function openDeptSettings(id) {
     const d = departmentsList.find(x => x.id === id);
@@ -114,7 +110,6 @@ async function openDeptSettings(id) {
     editingDepartment = d;
     document.getElementById('edit-d-name').value = d.name;
 
-    // Load cooperation dropdown
     const collabSelect = document.getElementById('edit-d-collab');
     const possiblePartners = departmentsList.filter(other => other.id !== id);
     collabSelect.innerHTML = `<option value="">-- Žádný --</option>` +
@@ -125,10 +120,8 @@ async function openDeptSettings(id) {
 
     await fetchAllPersons();
 
-    // Render initial modal unassigned list
     renderUnassignedPersonsModal('');
 
-    // Pre-filter current members
     currentDeptMembers = availablePersonsList.filter(p => p.department && p.department.id === d.id);
     renderDeptMembers();
 
@@ -148,7 +141,7 @@ async function openAddPersonToDeptModal() {
     await fetchAllPersons();
 
     document.getElementById('modal-add-person-to-dept').classList.remove('hidden');
-    renderUnassignedPersonsModal(''); // Reset list
+    renderUnassignedPersonsModal('');
     setTimeout(() => {
         const input = document.getElementById('search-person-add-modal');
         input.value = '';
@@ -210,13 +203,12 @@ function renderUnassignedPersonsModal(filterText = '') {
 }
 
 function selectPersonForAdd(personId) {
-    // Toggle selection
     if (selectedPersonIdToAdd === personId) {
         selectedPersonIdToAdd = null;
     } else {
         selectedPersonIdToAdd = personId;
     }
-    document.getElementById('search-person-add-modal').value = ''; // clears filter to see choice
+    document.getElementById('search-person-add-modal').value = '';
     renderUnassignedPersonsModal();
     document.getElementById('btn-confirm-add-person').disabled = (selectedPersonIdToAdd === null);
 }
@@ -253,12 +245,10 @@ async function confirmAddPersonToDept() {
             body: JSON.stringify({ departmentId: editingDepartment.id })
         });
 
-        // Refresh local array
         await fetchAllPersons();
         currentDeptMembers = availablePersonsList.filter(x => x.department && x.department.id === editingDepartment.id);
         renderDeptMembers();
 
-        // In background refresh departments table info (like member count)
         await fetchDepartments();
         renderDepartmentsList();
         
@@ -278,10 +268,9 @@ async function removePersonFromDeptLocal(personId) {
         await fetch(`${API_BASE}/persons/${personId}/department`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ departmentId: null }) // Unassign feature we added
+            body: JSON.stringify({ departmentId: null })
         });
 
-        // Refresh local
         await fetchAllPersons();
         currentDeptMembers = availablePersonsList.filter(x => x.department && x.department.id === editingDepartment.id);
         renderDeptMembers();
@@ -303,7 +292,6 @@ async function saveDepartmentSettings() {
     const collabId = document.getElementById('edit-d-collab').value;
 
     try {
-        // Změna názvu
         if (newName && newName !== editingDepartment.name) {
             await fetch(`${API_BASE}/departments/${editingDepartment.id}`, {
                 method: 'PUT',
@@ -312,14 +300,8 @@ async function saveDepartmentSettings() {
             });
         }
 
-        // Změna vazby: Pokud string neni prazdny, je to ID, jinak null
         const partnerBodyId = collabId === "" ? null : Number(collabId);
 
-        // V department API mame put pro collaboration
-        // Z puvodniho kodu to bylo reseno trosku divne ale /departments/:id/collaboration umi fungovat
-        // Pro null musime udelat check, mozna nam to backend spadlne. 
-        // We will call the API anyway
-        // Vždy uložíme stav spolupráce — backend umí zpracovat jak nastavení, tak odebrání (null)
         await fetch(`${API_BASE}/departments/${editingDepartment.id}/collaboration`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -337,9 +319,6 @@ async function saveDepartmentSettings() {
     }
 }
 
-// -----------------------------------------------------
-// Delete Modal Logic
-// -----------------------------------------------------
 
 let deptToDelete = null;
 
@@ -372,7 +351,6 @@ async function confirmDeleteDept() {
     closeDeptDeleteModal();
 }
 
-// Initialization
 async function initDepartmentsView() {
     await fetchDepartments();
     renderDepartmentsList();

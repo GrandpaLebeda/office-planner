@@ -16,7 +16,6 @@ function renderPersonsList(filterText = '') {
 
     listContainer.innerHTML = '';
     
-    // Filter by text (first name or surname)
     const lowerFilter = filterText.toLowerCase();
     const filtered = personsList.filter(p => 
         p.firstName.toLowerCase().includes(lowerFilter) || 
@@ -54,7 +53,7 @@ function renderPersonsList(filterText = '') {
 
         return `
             <div class="list-item">
-                <div class="grid grid-cols-[3fr_2fr_2fr_2fr_120px] gap-6 w-full items-center text-sm">
+                <div class="list-row-persons">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
                             <i class="fa-solid fa-user"></i>
@@ -75,7 +74,6 @@ function renderPersonsList(filterText = '') {
     }).join('');
 
     listContainer.innerHTML = html;
-    lucide.createIcons();
 }
 
 function filterPersons() {
@@ -139,7 +137,7 @@ async function confirmDeletePerson() {
         if (response.ok) {
             showToast("Zaměstnanec smazán", "success");
             await fetchPersons();
-            filterPersons(); // Re-apply existing filter
+            filterPersons();
         } else {
             const err = await response.json();
             showToast(err.error || "Chyba při mazání.", "error");
@@ -151,13 +149,11 @@ async function confirmDeletePerson() {
     closePersonDeleteModal();
 }
 
-// Initialization for when the view loads
 async function initPersonsView() {
     await fetchPersons();
     renderPersonsList();
 }
 
-// Global scope exports for inline HTML onclick handlers
 window.fetchPersons = fetchPersons;
 window.renderPersonsList = renderPersonsList;
 window.filterPersons = filterPersons;
