@@ -1,7 +1,3 @@
-/**
- * cleanup.js — Pomocný modul pro smazání všech testovacích dat po skončení testů.
- * Smaže všechny uzly jejichž name začíná "Test_" prefix (bezpečné v dev/test prostředí).
- */
 const request = require("supertest");
 const app = require("../src/app");
 const { driver } = require("../src/db");
@@ -9,21 +5,21 @@ const { driver } = require("../src/db");
 async function cleanupTestData() {
   const session = driver.session();
   try {
-    // Smaž testovací oddělení (prefixový match)
+    // smazani testovacich oddeleni
     await session.run(`
       MATCH (d:Department)
       WHERE d.name STARTS WITH 'Test_'
       DETACH DELETE d
     `);
 
-    // Smaž testovací osoby (firstName = "Test")
+    // smazani testovaci osoby
     await session.run(`
       MATCH (p:Person)
       WHERE p.firstName = 'Test'
       DETACH DELETE p
     `);
 
-    // Smaž testovací budovy
+    // Smazani testovaci budovy
     await session.run(`
       MATCH (b:Building)
       WHERE b.name STARTS WITH 'Test_'

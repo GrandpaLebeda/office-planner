@@ -9,40 +9,37 @@ const router = express.Router();
 router.post("/run", async (req, res) => {
   const session = driver.session();
   try {
-    // 1) Načtení oddělení a jejich velikostí
     const deptRes = await session.run(`
       MATCH (d:Department) 
       OPTIONAL MATCH (d)<-[:WORKS_IN]-(p:Person) 
       RETURN d.id AS id, d.name AS name, count(p) AS size
     `);
-    let departments = deptRes.records.map(r => ({ 
-      id: toNum(r.get("id")), 
-      name: r.get("name"), 
-      size: toNum(r.get("size")) 
+    let departments = deptRes.records.map(r => ({
+      id: toNum(r.get("id")),
+      name: r.get("name"),
+      size: toNum(r.get("size"))
     }));
 
-    // 2) Načtení pater a budov
     const floorRes = await session.run(`
       MATCH (b:Building)-[:HAS_FLOOR]->(f:Floor) 
       RETURN f.id AS id, f.capacity AS capacity, f.level AS level, b.name AS buildingName 
       ORDER BY b.id, f.level
     `);
-    let floors = floorRes.records.map(r => ({ 
-      id: toNum(r.get("id")), 
-      capacity: toNum(r.get("capacity")), 
-      buildingName: r.get("buildingName"), 
-      occupied: 0, 
-      assignedDepts: [] 
+    let floors = floorRes.records.map(r => ({
+      id: toNum(r.get("id")),
+      capacity: toNum(r.get("capacity")),
+      buildingName: r.get("buildingName"),
+      occupied: 0,
+      assignedDepts: []
     }));
 
-    // 3) Kontrola zamknutých placementů z minulosti
     const lastARes = await session.run(`
       MATCH (a:Assignment) 
       RETURN a.id AS id 
       ORDER BY a.createdAt DESC 
       LIMIT 1
     `);
-    
+
     let lockedPlacements = [];
     if (lastARes.records.length > 0) {
       const lastId = toNum(lastARes.records[0].get("id"));
@@ -52,9 +49,9 @@ router.post("/run", async (req, res) => {
         MATCH (pl)-[:ON_FLOOR]->(f:Floor)
         RETURN d.id AS deptId, f.id AS floorId
       `, { lastId });
-      lockedPlacements = lockedRes.records.map(r => ({ 
-        deptId: toNum(r.get("deptId")), 
-        floorId: toNum(r.get("floorId")) 
+      lockedPlacements = lockedRes.records.map(r => ({
+        deptId: toNum(r.get("deptId")),
+        floorId: toNum(r.get("floorId"))
       }));
     }
 
@@ -62,13 +59,12 @@ router.post("/run", async (req, res) => {
     lockedPlacements.forEach(lp => {
       const d = departments.find(x => x.id === lp.deptId);
       const f = floors.find(x => x.id === lp.floorId);
-      if (d && f) { 
-        f.occupied += d.size; 
-        f.assignedDepts.push({ ...d, locked: true }); 
+      if (d && f) {
+        f.occupied += d.size;
+        f.assignedDepts.push({ ...d, locked: true });
       }
     });
 
-    // 4) Načtení COLLABORATES_WITH hran
     const collabRes = await session.run(`
       MATCH (d:Department)-[:COLLABORATES_WITH]->(p:Department)
       RETURN d.id AS deptId, p.id AS partnerId
@@ -78,7 +74,6 @@ router.post("/run", async (req, res) => {
       partnerId: toNum(r.get("partnerId"))
     }));
 
-    // VALIDACE: Zamezit spuštění alokace na nesmyslných datech
     if (departments.length === 0) {
       return res.status(400).json({ error: "Žádná oddělení k alokaci." });
     }
@@ -90,7 +85,6 @@ router.post("/run", async (req, res) => {
       return res.status(400).json({ error: "Celková kapacita všech dostupných pater je 0." });
     }
 
-    // 5) ILP solver
     const { assignments, failed, collaborationScore, totalCollabPairs } = solveAllocation({
       departments,
       floors,
@@ -98,7 +92,6 @@ router.post("/run", async (req, res) => {
       collaborations,
     });
 
-    // 6) Uložení do databáze
     const newAssignmentId = Date.now();
     await session.run(`CREATE (a:Assignment {id: $id, createdAt: datetime()})`, { id: newAssignmentId });
 
@@ -163,9 +156,9 @@ router.post("/move", async (req, res) => {
     const lastAId = toNum(r.get("lastAssignmentId"));
 
     if (occ + dSize > cap) {
-      return res.status(400).json({ 
-        error: "Nedostatečná kapacita patra.", 
-        details: { capacity: cap, needed: occ + dSize, currentOccupied: occ } 
+      return res.status(400).json({
+        error: "Nedostatečná kapacita patra.",
+        details: { capacity: cap, needed: occ + dSize, currentOccupied: occ }
       });
     }
 
@@ -201,15 +194,14 @@ router.post("/move", async (req, res) => {
     `, { newId: newId, deptId: Number(departmentId), fId: Number(targetFloorId) });
 
     res.json({ success: true, assignmentId: newId, message: "Manuální přesun úspěšný." });
-  } catch (err) { 
-    res.status(500).json({ error: err.message }); 
-  } finally { 
-    await session.close(); 
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
   }
 });
 
 // DELETE /assignments/:deptId/placement
-// Odebrání týmu z mapy (vytvoření nového snapshotu bez tohoto týmu)
 router.delete("/:deptId/placement", async (req, res) => {
   const session = driver.session();
   const removingDeptId = Number(req.params.deptId);
@@ -231,7 +223,6 @@ router.delete("/:deptId/placement", async (req, res) => {
 
     await session.run(`CREATE (a:Assignment {id: $id, createdAt: datetime()})`, { id: newId });
 
-    // Zkopírujeme úplně všechny minulé alokace, s výjimkou toho, který odebíráme
     await session.run(`
       MATCH (oldA:Assignment {id: $oldId})-[:HAS_PLACEMENT]->(oldPl:Placement)-[:OF_DEPARTMENT]->(d:Department)
       WHERE d.id <> $removingDeptId
@@ -261,10 +252,10 @@ router.post("/clear", async (req, res) => {
   try {
     await session.run(`CREATE (a:Assignment {id: $id, createdAt: datetime()})`, { id: newId });
     res.json({ success: true, assignmentId: newId, message: "Mapa vyčištěna." });
-  } catch (err) { 
-    res.status(500).json({ error: err.message }); 
-  } finally { 
-    await session.close(); 
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
   }
 });
 

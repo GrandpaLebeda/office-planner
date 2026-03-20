@@ -66,9 +66,7 @@ describe("Departments API", () => {
     const nameB = uname();
     const a = await request(app).post("/departments").send({ name: nameA });
     const b = await request(app).post("/departments").send({ name: nameB });
-    // Nastav
     await request(app).put(`/departments/${a.body.id}/collaboration`).send({ collaboratesWithId: b.body.id });
-    // Odeber
     const res = await request(app)
       .put(`/departments/${a.body.id}/collaboration`)
       .send({ collaboratesWithId: null });

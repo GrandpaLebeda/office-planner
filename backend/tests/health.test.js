@@ -2,12 +2,10 @@ const request = require("supertest");
 const { cleanupTestData, app, driver } = require("./testHelpers");
 
 beforeAll(async () => {
-  // Vyčisti případná stará testovací data před startem
   await cleanupTestData();
 });
 
 afterAll(async () => {
-  // Vyčisti vše co testy vytvořily
   await cleanupTestData();
   await driver.close();
 });

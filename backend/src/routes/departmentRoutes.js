@@ -4,10 +4,7 @@ const { toNum } = require("../utils/neo4jUtils");
 
 const router = express.Router();
 
-/**
- * GET /departments
- * Seznam oddělení včetně informací o lidech a spolupracujícím oddělení
- */
+// GET /departments
 router.get("/", async (req, res) => {
   const session = driver.session();
   try {
@@ -35,10 +32,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-/**
- * POST /departments
- * Vytvoření nového oddělení (volitelně i s partnerem, ID generováno auto-inkrementálně)
- */
+// POST /departments
 router.post("/", async (req, res) => {
   const session = driver.session();
   const { name, collaboratesWithId } = req.body;
@@ -49,7 +43,6 @@ router.post("/", async (req, res) => {
     const check = await session.run("MATCH (d:Department {name: $name}) RETURN d", { name: name.trim() });
     if (check.records.length > 0) return res.status(409).json({ error: "Oddělení s tímto názvem již existuje." });
 
-    // Auto-increment logic pro ID oddělení
     const idResult = await session.run(`
       MATCH (d:Department) 
       RETURN coalesce(max(d.id), 0) + 1 AS nextId
@@ -71,10 +64,10 @@ router.post("/", async (req, res) => {
     }
 
     const created = result.records[0];
-    res.status(201).json({ 
-      id: toNum(created.get("id")), 
-      name: created.get("name"), 
-      message: "Oddělení úspěšně vytvořeno." 
+    res.status(201).json({
+      id: toNum(created.get("id")),
+      name: created.get("name"),
+      message: "Oddělení úspěšně vytvořeno."
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -83,11 +76,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-/**
- * PUT /departments/:id/collaboration
- * Nastavení nebo odebrání spolupracujícího oddělení.
- * Posláním collaboratesWithId: null se odebere veškerá spolupráce.
- */
+// PUT /departments/:id/collaboration
 router.put("/:id/collaboration", async (req, res) => {
   const session = driver.session();
   const deptId = Number(req.params.id);
@@ -99,7 +88,6 @@ router.put("/:id/collaboration", async (req, res) => {
 
   try {
     if (collaboratesWithId === null || collaboratesWithId === undefined || collaboratesWithId === "") {
-      // Odebrání veškeré spolupráce — smažeme všechny COLLABORATES_WITH hrany obousměrně
       await session.run(`
         MATCH (d:Department {id: $deptId})
         OPTIONAL MATCH (d)-[r1:COLLABORATES_WITH]->(other:Department)
@@ -109,7 +97,6 @@ router.put("/:id/collaboration", async (req, res) => {
       return res.json({ success: true, message: "Spolupráce byla odebrána." });
     }
 
-    // Nastavení nového partnera
     const partnerId = Number(collaboratesWithId);
     if (isNaN(partnerId)) {
       return res.status(400).json({ error: "ID partnera musí být číslo." });
@@ -134,10 +121,7 @@ router.put("/:id/collaboration", async (req, res) => {
   }
 });
 
-/**
- * PUT /departments/:id
- * Úprava názvu oddělení
- */
+// PUT /departments/:id
 router.put("/:id", async (req, res) => {
   const session = driver.session();
   const id = Number(req.params.id);
@@ -165,20 +149,17 @@ router.put("/:id", async (req, res) => {
     if (result.records.length === 0) {
       return res.status(404).json({ error: "Oddělení s tímto ID nebylo nalezeno." });
     }
-    
+
     const r = result.records[0];
     res.json({ id: toNum(r.get("id")), name: r.get("name") });
-  } catch (err) { 
-    res.status(500).json({ error: err.message }); 
-  } finally { 
-    await session.close(); 
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
   }
 });
 
-/**
- * DELETE /departments/:id
- * Smazání oddělení a všech jeho vazeb (DETACH DELETE)
- */
+// DELETE /departments/:id
 router.delete("/:id", async (req, res) => {
   const session = driver.session();
   const id = Number(req.params.id);
@@ -186,7 +167,6 @@ router.delete("/:id", async (req, res) => {
   if (isNaN(id)) return res.status(400).json({ error: "ID oddělení musí být číslo." });
 
   try {
-    // Nejdříve smaž Placement uzly odkazující na toto oddělení (osiřelé záznamy)
     await session.run(`
       MATCH (pl:Placement)-[:OF_DEPARTMENT]->(d:Department {id: $id})
       DETACH DELETE pl

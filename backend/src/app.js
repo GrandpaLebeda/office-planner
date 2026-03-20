@@ -1,7 +1,3 @@
-/**
- * app.js — Express aplikace bez listen().
- * Importuji ho zvlášť, aby jej testy mohly načíst bez spuštění serveru.
- */
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
@@ -29,7 +25,6 @@ app.get("/health", async (req, res) => {
   finally { await session.close(); }
 });
 
-// Register Domain Routes
 app.use("/map", mapRoutes);
 app.use("/buildings", buildingRoutes);
 app.use("/departments", departmentRoutes);

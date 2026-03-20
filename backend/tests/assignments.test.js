@@ -15,10 +15,7 @@ describe("Assignments API", () => {
   });
 
   test("POST /assignments/run — spustí automatickou alokaci", async () => {
-    // We clean up everything before running the auto allocation if needed, but here we just call run.
     const res = await request(app).post("/assignments/run");
-    // Depending on DB state, this may actually return 400 now.
-    // So we just check it doesn't return 500. It can be 200 or 400.
     expect([200, 400]).toContain(res.status);
     if (res.status === 200) {
       expect(res.body.success).toBe(true);
@@ -31,11 +28,9 @@ describe("Assignments API", () => {
   });
 
   test("POST /assignments/move — přesune tým na konkrétní patro", async () => {
-    // Tato test předpokládá, že existuje alespoň 1 oddělení a 1 patro v DB.
-    // Nejdříve získej data:
     const depts = await request(app).get("/departments");
     const buildings = await request(app).get("/buildings");
-    
+
     if (depts.body.length === 0 || buildings.body.length === 0) {
       console.warn("Test přeskočen: nejsou data pro přesun");
       return;
@@ -44,13 +39,12 @@ describe("Assignments API", () => {
     const firstDept = depts.body[0];
     const firstBuilding = buildings.body[0];
     const floorsRes = await request(app).get(`/buildings/${firstBuilding.id}/floors`);
-    
+
     if (!floorsRes.body.floors || floorsRes.body.floors.length === 0) {
       console.warn("Test přeskočen: žádné patro v budově");
       return;
     }
 
-    // Nejdřív vyčisti mapu
     await request(app).post("/assignments/clear");
 
     const firstFloor = floorsRes.body.floors[0];
@@ -76,7 +70,6 @@ describe("Assignments API", () => {
       console.warn("Test přeskočen: žádné oddělení");
       return;
     }
-    // Alokujeme nejdříve
     await request(app).post("/assignments/run");
 
     const firstDept = depts.body[0];

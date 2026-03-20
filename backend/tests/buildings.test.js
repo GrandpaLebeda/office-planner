@@ -36,7 +36,6 @@ describe("Buildings API", () => {
   test("POST /buildings — duplicitní název → 409", async () => {
     const name = uname();
     await request(app).post("/buildings").send({ name });
-    // Podruhé stejný název
     const res = await request(app).post("/buildings").send({ name });
     expect(res.status).toBe(409);
   });
