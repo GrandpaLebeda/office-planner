@@ -1,4 +1,3 @@
-// --- BUILDINGS LOGIC ---
 
 async function fetchBuildings() {
     try {
@@ -10,9 +9,9 @@ async function fetchBuildings() {
         if (selector) {
             selector.innerHTML = buildingsList.map(b => `<option value="${b.id}" ${b.id === currentBuildingId ? 'selected' : ''}>${b.name}</option>`).join('');
         }
-    } catch (err) { 
+    } catch (err) {
         console.error(err);
-        buildingsList = []; // Zabraňuje TypeErroru
+        buildingsList = [];
     }
 }
 
@@ -49,8 +48,8 @@ async function createBuilding() {
             const err = await res.json();
             showToast(err.error || "Při vytváření budovy nastala chyba.", "error");
         }
-    } catch (err) { 
-        console.error(err); 
+    } catch (err) {
+        console.error(err);
         showToast("Chyba při komunikaci se serverem.", "error");
     }
 }
@@ -74,9 +73,8 @@ async function renderBuildingsList() {
         return;
     }
 
-    // Potřebujeme načíst kapacity pro zobrazení
     container.innerHTML = `
-        <div class="grid grid-cols-[3fr_2fr_2fr_180px] gap-6 px-10 text-[15px] font-bold text-[#1f2937] mb-4 items-center">
+        <div class="list-header list-header-buildings">
             <span>Název</span>
             <span>Počet pater</span>
             <span>Kapacita</span>
@@ -102,7 +100,7 @@ async function renderBuildingsList() {
         const row = document.createElement('div');
         row.className = 'list-item';
         row.innerHTML = `
-            <div class="grid grid-cols-[3fr_2fr_2fr_180px] gap-6 w-full items-center text-sm">
+            <div class="list-row-buildings">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
                         <i class="fa-solid fa-city"></i>
@@ -119,17 +117,16 @@ async function renderBuildingsList() {
         `;
         container.appendChild(row);
     }
-    lucide.createIcons();
 }
 
 async function openSettings(id) {
     const b = buildingsList.find(x => x.id === id);
     editingBuilding = b;
     document.getElementById('edit-b-name').value = b.name;
-    
+
     const floorRes = await fetch(`${API_BASE}/buildings/${b.id}/floors`);
     const data = await floorRes.json();
-    
+
     const floors = data.floors || [];
     const maxLevel = floors.length > 0 ? Math.max(...floors.map(f => f.level)) : 0;
 
@@ -143,7 +140,7 @@ async function openSettings(id) {
             </div>
         </div>
     `).join('');
-    
+
     document.getElementById('modal-building-settings').classList.remove('hidden');
 }
 
@@ -195,19 +192,19 @@ async function saveBuildingSettings() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: newName })
             });
-        } catch(err) { console.error("Chyba při přejmenování", err); }
+        } catch (err) { console.error("Chyba při přejmenování", err); }
     }
 
     const inputs = document.querySelectorAll('.floor-cap-input');
     for (const input of inputs) {
         const floorId = input.dataset.floorId;
         const capacity = parseInt(input.value);
-        if(!isNaN(capacity)) {
-           await fetch(`${API_BASE}/floors/${floorId}`, {
-               method: 'PUT',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ capacity })
-           });
+        if (!isNaN(capacity)) {
+            await fetch(`${API_BASE}/floors/${floorId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ capacity })
+            });
         }
     }
     closeModal();
@@ -217,20 +214,19 @@ async function saveBuildingSettings() {
 }
 
 async function addFloorToEdit() {
-    if(!editingBuilding) return;
+    if (!editingBuilding) return;
     const list = document.getElementById('modal-floors-list');
-    const floorsCount = list.children.length; // Approximate check based on rendered rows
+    const floorsCount = list.children.length;
     const nextLevel = floorsCount + 1;
-    
+
     try {
         const res = await fetch(`${API_BASE}/buildings/${editingBuilding.id}/floors`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ level: nextLevel, capacity: 20 }) // Default capacity 20
+            body: JSON.stringify({ level: nextLevel, capacity: 20 })
         });
-        
+
         if (res.ok) {
-            // Re-render modal inputs smoothly
             await openSettings(editingBuilding.id);
             await fetchBuildings();
             await renderBuildingsList();
@@ -239,7 +235,7 @@ async function addFloorToEdit() {
             const err = await res.json();
             showToast(err.error || "Při přidávání patra nastala chyba.", "error");
         }
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         showToast("Při přidávání patra nastala chyba spojení.", "error");
     }
@@ -248,17 +244,16 @@ async function addFloorToEdit() {
 async function removeFloor(buildingId, floorId, level) {
     try {
         await fetch(`${API_BASE}/floors/${floorId}`, { method: 'DELETE' });
-        await openSettings(buildingId); // Refresh modal view
+        await openSettings(buildingId);
         await fetchBuildings();
         await renderBuildingsList();
         showToast("Patro bylo úspěšně odebráno.", "success");
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         showToast("Při mazání patra došlo k chybě.", "error");
     }
 }
 
-// Global scope exports for inline HTML onclick handlers
 window.fetchBuildings = fetchBuildings;
 window.createBuilding = createBuilding;
 window.openSettings = openSettings;

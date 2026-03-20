@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="cs">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OfficePlanner - Interní systém</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body class="bg-[#f0f2f5] text-slate-900 overflow-hidden">
 
-    <!-- TOP NAVBAR -->
+    <!-- Horní hlavička -->
     <header class="h-14 bg-[#2b6be6] flex items-center justify-between px-6 shadow-md relative z-50">
         <div class="flex items-center gap-3">
             <i class="fa-solid fa-building text-white text-[2rem]"></i>
@@ -30,34 +32,35 @@
     </header>
 
     <div class="flex h-[calc(100vh-3.5rem)]">
-        
-        <!-- LEFT SIDEBAR NAVIGATION -->
+
+        <!-- Side menu -->
         <nav class="w-64 bg-[#f8f9fa] border-r border-slate-200 p-3 flex flex-col gap-1">
-            <button onclick="switchView('map')" id="nav-map" class="sidebar-item active w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+            <button onclick="switchView('map')" id="nav-map" class="sidebar-item active">
                 <i class="fa-solid fa-map w-6 text-center text-lg"></i> <span>Mapa</span>
             </button>
-            <button onclick="switchView('buildings')" id="nav-buildings" class="sidebar-item w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+            <button onclick="switchView('buildings')" id="nav-buildings" class="sidebar-item">
                 <i class="fa-solid fa-city w-6 text-center text-lg"></i> <span>Správa Budov</span>
             </button>
-            <button onclick="switchView('departments')" id="nav-departments" class="sidebar-item w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+            <button onclick="switchView('departments')" id="nav-departments" class="sidebar-item">
                 <i class="fa-solid fa-users w-6 text-center text-lg"></i> <span>Správa Týmů</span>
             </button>
-            <button onclick="switchView('persons')" id="nav-persons" class="sidebar-item w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+            <button onclick="switchView('persons')" id="nav-persons" class="sidebar-item">
                 <i class="fa-solid fa-user-pen w-6 text-center text-lg"></i> <span>Správa Zaměstnanců</span>
             </button>
         </nav>
 
-        <!-- MAIN CONTENT AREA -->
+        <!-- Hlavní obsah -->
         <main id="main-content" class="flex-1 overflow-y-auto p-8 relative">
             <!-- Dynamicky dočítaný obsah přes fetch -->
         </main>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripty -->
     <script src="js/app.js?v=8"></script>
     <script src="js/map.js?v=8"></script>
     <script src="js/buildings.js?v=8"></script>
     <script src="js/departments.js?v=8"></script>
     <script src="js/persons.js?v=8"></script>
 </body>
+
 </html>

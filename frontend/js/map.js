@@ -1,4 +1,3 @@
-// --- MAP LOGIC ---
 
 async function fetchMap() {
     const selector = document.getElementById('building-selector');
@@ -33,10 +32,8 @@ function renderMap(data) {
         const floorEl = document.createElement('div');
         floorEl.className = 'mb-10 last:mb-0';
 
-        // Progress bar as div (progress element doesn't style well in Tailwind CDN)
         const progressColor = percentSafe > 80 ? '#f03e3e' : percentSafe > 50 ? '#f59f00' : '#40c057';
 
-        // Build floor teams HTML
         const teamsHtml = floor.departments.map(d => `
             <div class="bg-[#2b6be6] text-white px-4 py-2 rounded-lg flex justify-between items-center shadow-sm" data-dept-id="${d.id}">
                 <span class="text-xs font-bold">${d.name} <span class="font-normal opacity-80 ml-1">(${d.size} členů)</span></span>
@@ -59,7 +56,6 @@ function renderMap(data) {
             </div>
         `;
 
-        // Attach drag/drop events via addEventListener (more reliable than inline)
         const dropZone = floorEl.querySelector('.floor-drop-zone');
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -76,7 +72,6 @@ function renderMap(data) {
             handleDrop(e, floor.id);
         });
 
-        // Remove buttons via event delegation
         floorEl.querySelectorAll('[data-remove-dept]').forEach(btn => {
             btn.addEventListener('click', () => removeFromFloor(Number(btn.dataset.removeDept)));
         });
@@ -84,12 +79,10 @@ function renderMap(data) {
         container.appendChild(floorEl);
     });
 
-    // Update Stats
     document.getElementById('stat-capacity').textContent = totalCap;
     document.getElementById('stat-people').textContent = totalOcc;
     document.getElementById('stat-percent').textContent = totalCap > 0 ? ((totalOcc / totalCap) * 100).toFixed(1) + '%' : '0%';
 
-    // Render Unassigned
     const unList = document.getElementById('unassigned-list');
     if (!unList) return;
     
@@ -127,7 +120,6 @@ function renderMap(data) {
             unList.appendChild(el);
         });
     }
-    lucide.createIcons();
 }
 
 async function handleDrop(e, floorId) {
@@ -204,7 +196,6 @@ async function clearMap() {
     }
 }
 
-// Global scope exports for inline HTML onclick handlers
 window.fetchMap = fetchMap;
 window.renderMap = renderMap;
 window.handleDrop = handleDrop;

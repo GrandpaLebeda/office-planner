@@ -1,14 +1,12 @@
 <div class="page-container pt-12">
     
-    <!-- Top actions row -->
-    <div class="flex flex-col lg:flex-row gap-6 mb-8 justify-between items-end w-full">
-        <!-- Add Building Form -->
-        <div class="flex flex-wrap items-center gap-4 bg-transparent w-full lg:w-auto">
-            <div class="flex items-center gap-3">
+    <div class="top-actions-row items-end">
+        <div class="form-group">
+            <div class="input-group">
                 <span class="form-label mb-0">Název</span>
                 <input type="text" id="new-b-name" class="form-input w-64">
             </div>
-            <div class="flex items-center gap-3 w-48">
+            <div class="input-group w-48">
                 <span class="form-label mb-0 whitespace-nowrap">Počet pater</span>
                 <input type="number" id="new-b-floors" class="form-input">
             </div>
@@ -16,24 +14,21 @@
         </div>
     </div>
 
-    <!-- Main List Container -->
     <div class="panel content-panel">
         <h2 class="panel-title mb-8 mt-1">Seznam budov</h2>
         
-        <div id="buildings-table" class="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-8">
-            <!-- Dynamický obsah -->
+        <div id="buildings-table" class="list-container custom-scrollbar">
         </div>
     </div>
 </div>
 
-<!-- MODAL: BUILDING SETTINGS -->
-<div id="modal-building-settings" class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
-    <div class="modal-content max-w-2xl animate-in fade-in zoom-in duration-200">
+<div id="modal-building-settings" class="modal-overlay hidden">
+    <div class="modal-content modal-2xl">
         <div class="modal-header">
             <h3>Nastavení budovy</h3>
             <button onclick="closeModal()" class="modal-close">Zavřít &times;</button>
         </div>
-        <div class="p-8">
+        <div class="modal-body">
             <div class="mb-8">
                 <label class="form-label">Název budovy</label>
                 <input type="text" id="edit-b-name" class="form-input">
@@ -46,8 +41,7 @@
                         <span class="flex-1">Kapacita</span>
                     </div>
                     <div id="modal-floors-list" class="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                        <!-- Dynamický obsah -->
-                    </div>
+                                </div>
                     <button onclick="addFloorToEdit()" class="btn btn-primary mt-6">Přidat patro</button>
                 </div>
             </div>
@@ -58,14 +52,13 @@
     </div>
 </div>
 
-<!-- MODAL: DELETE CONFIRMATION -->
-<div id="modal-delete-confirm" class="modal-overlay hidden fixed inset-0 z-[110] flex items-center justify-center p-4">
-    <div class="modal-content max-w-sm animate-in fade-in zoom-in duration-200">
-        <div class="p-8 text-center flex flex-col items-center gap-4">
+<div id="modal-delete-confirm" class="modal-overlay z-110 hidden">
+    <div class="modal-content modal-sm">
+        <div class="modal-delete-body">
             <h3 class="text-xl font-bold text-[#1e293b] m-0">Opravdu chcete smazat tuto budovu?</h3>
             <p class="text-sm text-slate-600 mb-6 m-0">Tato akce je nevratná.</p>
 
-            <div class="flex gap-4 w-full border-t border-slate-100 pt-6 justify-center">
+            <div class="modal-delete-actions">
                 <button onclick="closeDeleteModal()" class="btn btn-secondary">Zrušit</button>
                 <button onclick="confirmDeleteBuilding()" class="btn btn-danger">Smazat</button>
             </div>
