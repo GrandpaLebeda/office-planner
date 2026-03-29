@@ -1,0 +1,19 @@
+// databázové schéma
+
+CREATE CONSTRAINT building_id IF NOT EXISTS 
+FOR (b:Building) REQUIRE b.id IS UNIQUE;
+
+CREATE CONSTRAINT floor_id IF NOT EXISTS 
+FOR (f:Floor) REQUIRE f.id IS UNIQUE;
+
+CREATE CONSTRAINT department_id IF NOT EXISTS 
+FOR (d:Department) REQUIRE d.id IS UNIQUE;
+
+CREATE CONSTRAINT person_id IF NOT EXISTS 
+FOR (p:Person) REQUIRE p.id IS UNIQUE;
+
+CREATE CONSTRAINT assignment_id IF NOT EXISTS 
+FOR (a:Assignment) REQUIRE a.id IS UNIQUE;
+
+CREATE CONSTRAINT placement_id IF NOT EXISTS 
+FOR (pl:Placement) REQUIRE pl.id IS UNIQUE;

@@ -1,0 +1,374 @@
+let departmentsList = [];
+let availablePersonsList = [];
+let editingDepartment = null;
+let currentDeptMembers = [];
+
+async function fetchDepartments() {
+    try {
+        const response = await fetch(`${API_BASE}/departments`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        departmentsList = await response.json();
+    } catch (error) {
+        console.error("Chyba při stahování týmů:", error);
+    }
+}
+
+async function fetchAllPersons() {
+    try {
+        const response = await fetch(`${API_BASE}/persons`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        availablePersonsList = await response.json();
+    } catch (error) {
+        console.error("Chyba při stahování zaměstnanců pro našeptávač:", error);
+    }
+}
+
+function renderDepartmentsList() {
+    const listContainer = document.getElementById('departments-list');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = '';
+
+    if (departmentsList.length === 0) {
+        listContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-24 gap-4 h-full">
+                <div class="w-16 h-16 rounded-full bg-[#f0f5ff] flex items-center justify-center text-[#2b6be6] mb-2">
+                    <i class="fa-solid fa-users text-3xl"></i>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-[#1e293b] text-base mb-1">Zatím zde nejsou žádné týmy</h3>
+                    <p class="text-sm text-slate-500">Přidejte první tým pomocí horního formuláře.</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    const html = departmentsList.map(d => {
+        return `
+            <div class="list-item">
+                <div class="list-row-departments">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <span class="font-medium text-[#1f2937] truncate">${d.name}</span>
+                    </div>
+                    <div class="text-center"><span class="font-medium text-slate-700">${d.people}</span></div>
+                    <div class="flex justify-end gap-3">
+                        <button onclick="openDeptSettings(${d.id})" class="btn btn-primary btn-sm">
+                            Upravit
+                        </button>
+                        <button onclick="deleteDept(${d.id})" class="btn btn-danger btn-sm">
+                            Smazat
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    listContainer.innerHTML = html;
+}
+
+async function createDepartment() {
+    const nameInput = document.getElementById('dept-name');
+    const name = nameInput.value.trim();
+
+    if (!name || name.length < 2) {
+        showToast("Název týmu musí mít alespoň 2 znaky.", "error");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/departments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+
+        if (response.ok) {
+            showToast("Tým úspěšně vytvořen", "success");
+            nameInput.value = '';
+            await fetchDepartments();
+            renderDepartmentsList();
+        } else {
+            const err = await response.json();
+            showToast(err.error || "Při přidávání týmu nastala chyba.", "error");
+        }
+    } catch (error) {
+        console.error("Chyba spojení:", error);
+        showToast("Chyba spojení s API.", "error");
+    }
+}
+
+
+async function openDeptSettings(id) {
+    const d = departmentsList.find(x => x.id === id);
+    if (!d) return;
+
+    editingDepartment = d;
+    document.getElementById('edit-d-name').value = d.name;
+
+    const collabSelect = document.getElementById('edit-d-collab');
+    const possiblePartners = departmentsList.filter(other => other.id !== id);
+    collabSelect.innerHTML = `<option value="">-- Žádný --</option>` +
+        possiblePartners.map(p => {
+            const isSelected = d.collaboratesWith && d.collaboratesWith.id === p.id ? 'selected' : '';
+            return `<option value="${p.id}" ${isSelected}>${p.name}</option>`;
+        }).join('');
+
+    await fetchAllPersons();
+
+    renderUnassignedPersonsModal('');
+
+    currentDeptMembers = availablePersonsList.filter(p => p.department && p.department.id === d.id);
+    renderDeptMembers();
+
+    document.getElementById('modal-department-settings').classList.remove('hidden');
+}
+
+function closeDeptModal() {
+    editingDepartment = null;
+    currentDeptMembers = [];
+    document.getElementById('modal-department-settings').classList.add('hidden');
+}
+
+async function openAddPersonToDeptModal() {
+    selectedPersonIdToAdd = null;
+    document.getElementById('btn-confirm-add-person').disabled = true;
+    
+    await fetchAllPersons();
+
+    document.getElementById('modal-add-person-to-dept').classList.remove('hidden');
+    renderUnassignedPersonsModal('');
+    setTimeout(() => {
+        const input = document.getElementById('search-person-add-modal');
+        input.value = '';
+        input.focus();
+    }, 50);
+}
+
+function closeAddPersonToDeptModal() {
+    document.getElementById('search-person-add-modal').value = '';
+    document.getElementById('modal-add-person-to-dept').classList.add('hidden');
+}
+
+function renderDeptMembers() {
+    const container = document.getElementById('dept-members-list');
+    const emptyState = document.getElementById('dept-members-empty');
+
+    if (currentDeptMembers.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+    } else {
+        emptyState.classList.add('hidden');
+        container.innerHTML = currentDeptMembers.map(m => `
+            <div class="bg-white px-4 py-2 rounded-lg flex justify-between items-center shadow-sm border border-slate-100">
+                <span class="text-sm font-medium text-slate-700">${m.firstName} ${m.surname}</span>
+                <button onclick="removePersonFromDeptLocal(${m.id})" class="text-red-400 hover:text-red-600 font-bold" title="Odstranit z týmu">×</button>
+            </div>
+        `).join('');
+    }
+}
+
+let selectedPersonIdToAdd = null;
+
+function renderUnassignedPersonsModal(filterText = '') {
+    const container = document.getElementById('modal-unassigned-persons-list');
+    if (!container) return;
+
+    const unassigned = availablePersonsList.filter(p => !p.department || p.department === "" || p.department === "null");
+    const filtered = unassigned.filter(p => {
+        const fullName = `${p.firstName} ${p.surname}`.toLowerCase();
+        return fullName.includes(filterText.toLowerCase());
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-sm text-slate-500 font-medium">Nenalezeni žádní volní zaměstnanci.</div>`;
+        return;
+    }
+
+    container.innerHTML = filtered.map(p => {
+        const isSelected = selectedPersonIdToAdd === p.id;
+        return `
+            <div onclick="selectPersonForAdd(${p.id})" class="px-4 py-3 rounded-lg flex items-center gap-3 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-transparent hover:bg-slate-100'}">
+                <div class="w-8 h-8 rounded-full ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center shrink-0 transition-colors">
+                    <i class="fa-solid fa-user text-xs"></i>
+                </div>
+                <span class="text-sm font-medium ${isSelected ? 'text-blue-900' : 'text-slate-700'}">${p.firstName} ${p.surname}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function selectPersonForAdd(personId) {
+    if (selectedPersonIdToAdd === personId) {
+        selectedPersonIdToAdd = null;
+    } else {
+        selectedPersonIdToAdd = personId;
+    }
+    document.getElementById('search-person-add-modal').value = '';
+    renderUnassignedPersonsModal();
+    document.getElementById('btn-confirm-add-person').disabled = (selectedPersonIdToAdd === null);
+}
+
+function filterAddPersonModal(text) {
+    if(!selectedPersonIdToAdd) {
+        renderUnassignedPersonsModal(text);
+    }
+}
+
+async function confirmAddPersonToDept() {
+    if (!editingDepartment || !selectedPersonIdToAdd) return;
+
+    const p = availablePersonsList.find(x => x.id === selectedPersonIdToAdd);
+    if (!p) {
+        showToast("Vybraný zaměstnanec nebyl nalezen.", "error");
+        return;
+    }
+
+    if (currentDeptMembers.find(x => x.id === p.id)) {
+        showToast("Zaměstnanec je již členem tohoto týmu.", "error");
+        return;
+    }
+
+    if (p.department && p.department.id !== editingDepartment.id) {
+        showToast(`Zaměstnanec je již zařazen do týmu ${p.department.name}. Nejdříve ho z něj odeberte.`, "error");
+        return;
+    }
+
+    try {
+        await fetch(`${API_BASE}/persons/${selectedPersonIdToAdd}/department`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ departmentId: editingDepartment.id })
+        });
+
+        await fetchAllPersons();
+        currentDeptMembers = availablePersonsList.filter(x => x.department && x.department.id === editingDepartment.id);
+        renderDeptMembers();
+
+        await fetchDepartments();
+        renderDepartmentsList();
+        
+        showToast("Zaměstnanec přidán do týmu", "success");
+        closeAddPersonToDeptModal();
+
+    } catch (e) {
+        console.error(e);
+        showToast("Chyba při přidávání zaměstnance", "error");
+    }
+}
+
+async function removePersonFromDeptLocal(personId) {
+    if (!editingDepartment) return;
+
+    try {
+        await fetch(`${API_BASE}/persons/${personId}/department`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ departmentId: null })
+        });
+
+        await fetchAllPersons();
+        currentDeptMembers = availablePersonsList.filter(x => x.department && x.department.id === editingDepartment.id);
+        renderDeptMembers();
+
+        await fetchDepartments();
+        renderDepartmentsList();
+        showToast("Zaměstnanec odebárn z týmu", "success");
+
+    } catch (e) {
+        console.error(e);
+        showToast("Chyba při odebírání zaměstnance", "error");
+    }
+}
+
+async function saveDepartmentSettings() {
+    if (!editingDepartment) return;
+
+    const newName = document.getElementById('edit-d-name').value.trim();
+    const collabId = document.getElementById('edit-d-collab').value;
+
+    try {
+        if (newName && newName !== editingDepartment.name) {
+            await fetch(`${API_BASE}/departments/${editingDepartment.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            });
+        }
+
+        const partnerBodyId = collabId === "" ? null : Number(collabId);
+
+        await fetch(`${API_BASE}/departments/${editingDepartment.id}/collaboration`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collaboratesWithId: partnerBodyId })
+        });
+
+
+        closeDeptModal();
+        showToast("Nastavení týmu bylo uloženo", "success");
+        await fetchDepartments();
+        renderDepartmentsList();
+    } catch (err) {
+        console.error(err);
+        showToast("Chyba při ukládání nastavení", "error");
+    }
+}
+
+
+let deptToDelete = null;
+
+function deleteDept(id) {
+    deptToDelete = id;
+    document.getElementById('modal-delete-dept-confirm').classList.remove('hidden');
+}
+
+function closeDeptDeleteModal() {
+    deptToDelete = null;
+    document.getElementById('modal-delete-dept-confirm').classList.add('hidden');
+}
+
+async function confirmDeleteDept() {
+    if (!deptToDelete) return;
+    try {
+        const response = await fetch(`${API_BASE}/departments/${deptToDelete}`, { method: 'DELETE' });
+        if (response.ok) {
+            showToast("Tým byl úspěšně smazán", "success");
+            await fetchDepartments();
+            renderDepartmentsList();
+        } else {
+            const err = await response.json();
+            showToast(err.error || "Chyba při mazání.", "error");
+        }
+    } catch (error) {
+        console.error(error);
+        showToast("Chyba spojení.", "error");
+    }
+    closeDeptDeleteModal();
+}
+
+async function initDepartmentsView() {
+    await fetchDepartments();
+    renderDepartmentsList();
+}
+
+window.fetchDepartments = fetchDepartments;
+window.renderDepartmentsList = renderDepartmentsList;
+window.createDepartment = createDepartment;
+window.openDeptSettings = openDeptSettings;
+window.closeDeptModal = closeDeptModal;
+window.openAddPersonToDeptModal = openAddPersonToDeptModal;
+window.closeAddPersonToDeptModal = closeAddPersonToDeptModal;
+window.filterAddPersonModal = filterAddPersonModal;
+window.selectPersonForAdd = selectPersonForAdd;
+window.confirmAddPersonToDept = confirmAddPersonToDept;
+window.removePersonFromDeptLocal = removePersonFromDeptLocal;
+window.saveDepartmentSettings = saveDepartmentSettings;
+window.deleteDept = deleteDept;
+window.closeDeptDeleteModal = closeDeptDeleteModal;
+window.confirmDeleteDept = confirmDeleteDept;
+window.initDepartmentsView = initDepartmentsView;

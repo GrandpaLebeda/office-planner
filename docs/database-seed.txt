@@ -1,0 +1,22 @@
+// Testovací data
+
+// vytvoření budovy
+CREATE (b:Building {id: 1, name: "Budova A"});
+
+// vytvoření pater
+CREATE (f1:Floor {id: 101, level: 1, capacity: 20});
+CREATE (f2:Floor {id: 102, level: 2, capacity: 15});
+
+CREATE (b)-[:HAS_FLOOR]->(f1);
+CREATE (b)-[:HAS_FLOOR]->(f2);
+
+// vytvoření oddělení
+CREATE (d1:Department {id: 1, name: "Vývoj"});
+CREATE (d2:Department {id: 2, name: "Marketing"});
+
+// zaměstnanci
+CREATE (:Person {id: 101, firstName: "Jan", surname: "Novák"})-[:WORKS_IN]->(d1);
+CREATE (:Person {id: 102, firstName: "Eva", surname: "Dvořáková"})-[:WORKS_IN]->(d2);
+
+// inicializace první verze rozmístění
+CREATE (:Assignment {id: timestamp(), createdAt: datetime(), source: "initial_setup"});
