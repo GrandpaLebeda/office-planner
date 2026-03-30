@@ -6,3 +6,6 @@ The application consists of a backend and a frontend part. The backend provides 
 
 The backend is based on a graph data model and uses Neo4j to represent relationships between departments, buildings, and floors. It includes an algorithm that assigns departments to available spaces while respecting capacity constraints and predefined rules.
 
+
+Authors: Štěpán Lebeda, Nikol Jantačová
+
